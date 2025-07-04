@@ -1,0 +1,60 @@
+body {
+  font-family: Arial, sans-serif;
+}
+
+.microsoft-container {
+  max-width: 210mm;
+  min-height: 297mm;
+  margin: 0 auto;
+  padding: 20mm;
+  background: white;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+.microsoft-name {
+  font-size: 24px;
+  text-align: center;
+  font-weight: bold;
+  margin-bottom: 10px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid #ccc;
+}
+
+.microsoft-contact {
+  text-align: center;
+  font-size: 12px;
+  margin-bottom: 15px;
+}
+
+.microsoft-section {
+  margin-bottom: 20px;
+}
+
+.microsoft-heading {
+  font-size: 14px;
+  font-weight: bold;
+  margin-bottom: 10px;
+  border-bottom: 1px solid #ccc;
+  padding-bottom: 5px;
+}
+
+.microsoft-item {
+  margin-bottom: 15px;
+  font-size: 12px;
+}
+
+.microsoft-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.microsoft-item ul {
+  padding-left: 20px;
+}
+
+.italic {
+  font-style: italic;
+  font-size: 12px;
+}

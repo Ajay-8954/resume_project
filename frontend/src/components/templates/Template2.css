@@ -1,0 +1,35 @@
+.resume-t2 {
+  width: 210mm;
+  min-height: 297mm;
+  background: #fff;
+  box-shadow: 0 0 15px rgba(0,0,0,0.1);
+  font-family: 'Georgia', 'Times New Roman', Times, serif;
+  padding: 25mm;
+}
+.header-t2 {
+  text-align: center;
+  border-bottom: 2px solid #000;
+  padding-bottom: 10px;
+  margin-bottom: 20px;
+}
+.header-t2 h1 { font-size: 2.2rem; margin: 0; text-transform: uppercase; letter-spacing: 2px; }
+.contact-info-t2 { font-size: 0.9rem; margin-top: 5px; }
+
+.section-t2 { margin-bottom: 20px; }
+.section-title-t2 {
+  font-size: 1.1rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border-bottom: 1px solid #ccc;
+  padding-bottom: 5px;
+  margin-bottom: 10px;
+}
+
+.item-t2 { margin-bottom: 15px; }
+.item-t2 h3 { margin: 0; font-size: 1.1rem; }
+.item-t2 p { margin: 2px 0; font-size: 0.95rem; }
+.details-t2 { font-style: italic; color: #444; }
+
+.skills-container-t2 { display: flex; flex-wrap: wrap; gap: 8px; }
+.skill-tag-t2 { font-size: 0.9rem; background: #f1f1f1; padding: 2px 8px; border: 1px solid #ddd; }
