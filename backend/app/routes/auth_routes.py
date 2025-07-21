@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, make_response, current_app
 import jwt
-import datetime
+from datetime import datetime, timezone, timedelta
 from functools import wraps
 from app.utils.auth_utils import token_required
 from .. import bcrypt
@@ -33,7 +33,7 @@ def register():
         'username': data['username'],
         'email': data['email'],
         'password': hashed_pw,
-        'createdAt': datetime.utcnow()  # Good practice to track creation time
+        'createdAt': datetime.now(timezone.utc)  # Good practice to track creation time
     })
     
     response = jsonify({'message': 'User created successfully'})
@@ -54,7 +54,7 @@ def login():
     
     token = jwt.encode({
         'email': user['email'],
-        'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=24)
+        'exp': datetime.now(timezone.utc) + timedelta(hours=24)
     }, current_app.config['SECRET_KEY'], algorithm="HS256")
     
     response = make_response(jsonify({

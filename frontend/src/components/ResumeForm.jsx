@@ -1,10 +1,20 @@
 import React, { useRef, useState, useEffect } from "react";
-import { CloudUpload } from "lucide-react";
+import { CloudUpload, Trash2, Pencil } from "lucide-react";
 import useResumeStore from "../store/useResumeStore";
 
 export default function ResumeForm() {
-  const { resumeFiles, setResumeFiles, manualForm, setManualForm } =
-    useResumeStore();
+  const {
+    resumeFiles,
+    setResumeFiles,
+    manualForm,
+    setManualForm,
+    toggle,
+    setToggle,
+  } = useResumeStore();
+
+  // Default to fresher
+  const [uploadLoading, setUploadLoading] = useState(false);
+  const [enhancingField, setEnhancingField] = useState(null); // 'experience', 'project', etc.
 
   const fileInputRef = useRef(null);
   const [newExperience, setNewExperience] = useState({
@@ -19,6 +29,7 @@ export default function ResumeForm() {
     school: "",
     startDate: "",
     endDate: "",
+    cgpa: "", // Add this line
   });
 
   const [newProject, setNewProject] = useState({
@@ -26,7 +37,7 @@ export default function ResumeForm() {
     startDate: "",
     endDate: "",
     tech: "",
-    points: [],
+    description: "",
   });
   const [newPoint, setNewPoint] = useState("");
 
@@ -36,7 +47,7 @@ export default function ResumeForm() {
 
   const [newAchievement, setNewAchievement] = useState({
     title: "",
-    points: [],
+    description: "",
   });
 
   // New sections state
@@ -45,7 +56,7 @@ export default function ResumeForm() {
     company: "",
     startDate: "",
     endDate: "",
-    description: [""],
+    description: "",
   });
 
   const [newCertification, setNewCertification] = useState({
@@ -56,20 +67,68 @@ export default function ResumeForm() {
 
   // new code for toggles
   const [showSections, setShowSections] = useState({
-    internships: false,
     achievements: false,
     certifications: false,
+    internships: toggle === "fresher",
   });
 
   const [editingIndex, setEditingIndex] = useState({
     experience: null,
     education: null,
     project: null,
-    achievement: null,
-    internship: null,
+    // achievement: null,
+    // internship: null,
   });
 
+  const [skillSuggestions, setSkillSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(0);
+
+  const fetchSkillSuggestions = async (input) => {
+    try {
+      const response = await fetch("http://localhost:5000/suggest-skills", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prefix: input,
+          skills: manualForm.skills || [], // Existing skills to avoid duplicates
+        }),
+      });
+
+      const data = await response.json();
+      setSkillSuggestions(data.suggestions || []);
+      setShowSuggestions(true);
+    } catch (error) {
+      console.error("Error fetching skill suggestions:", error);
+      setSkillSuggestions([]);
+    }
+  };
+
+  const enhanceField = async (fieldType, currentText, context = {}) => {
+    setEnhancingField(fieldType);
+    try {
+      const response = await fetch("http://localhost:5000/enhance-field", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fieldType,
+          text: currentText,
+          context,
+        }),
+      });
+      if (!response.ok) throw new Error("Enhancement failed");
+      const data = await response.json();
+      setEnhancingField(null);
+      return data.enhancedText; // Assuming API returns { enhancedText: "..." }
+    } catch (error) {
+      console.error("Error enhancing field:", error);
+      setEnhancingField(null);
+      return currentText; // Fallback to original text if error
+    }
+  };
+
   const uploadAndExtractResume = async (file) => {
+    setUploadLoading(true); // Set loading to true
     setResumeFiles(file);
     const formData = new FormData();
     formData.append("resume", file);
@@ -86,26 +145,62 @@ export default function ResumeForm() {
       }
 
       const data = await res.json();
-      console.log("Data is ", data);
+      console.log("Data received from backend:", data);
 
-      // Ensure we got valid data
-      if (typeof data !== "object" || data === null) {
-        throw new Error("Invalid response format");
-      }
-
-      // Merge with default structure
-      setManualForm((prev) => ({
-        ...prev,
-        ...data,
+      // Transform the data to match your form structure
+      const transformedData = {
+        Name: data.Name || "",
+        jobTitle: data.jobTitle || "",
+        email: data.email || "",
+        phone: data.phone || "",
+        location: data.location || data.Location || "",
+        linkedin: data.linkedin || "",
+        github: data.github || "",
+        objective: data.objective || "",
+        summary: data.summary || "",
         experience: data.experience || [],
         education: data.education || [],
+        projects: data.projects || [],
         skills: data.skills || [],
         languages: data.languages || [],
         interests: data.interests || [],
-      }));
+        achievements: data.achievements || [],
+        internships: data.internship || [],
+        certifications: data.certifications || [],
+      };
+
+      // Update the form state
+      setManualForm(transformedData);
+      console.log("Updated manualForm:", transformedData);
     } catch (err) {
       console.error("Upload error:", err);
       alert(`Error: ${err.message || "Failed to process resume"}`);
+    } finally {
+      setUploadLoading(false); // Reset loading
+    }
+  };
+
+  const [isGenerating, setIsGenerating] = useState(false);
+  const generateCareerObjective = async () => {
+    setIsGenerating(true);
+    try {
+      const response = await fetch("http://localhost:5000/generate-objective", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          education: manualForm.education || [],
+          projects: manualForm.projects || [],
+          internships: manualForm.internships || [],
+        }),
+      });
+      const data = await response.json();
+      if (data.objective) {
+        handleFieldChange("objective", data.objective);
+      }
+    } catch (error) {
+      alert("Error: " + error.message);
+    } finally {
+      setIsGenerating(false);
     }
   };
 
@@ -143,66 +238,206 @@ export default function ResumeForm() {
     }));
   };
 
-  const handleCertificationChange = (index, field, value) => {
-    const updated = [...(manualForm.certifications || [])];
-    updated[index][field] = value;
-    setManualForm((prev) => ({ ...prev, certifications: updated }));
+  // const handleExperienceChange = (field, value) => {
+  //   setNewExperience((prev) => ({ ...prev, [field]: value }));
+  // };
+
+  // const handleProjectChange = (field, value) => {
+  //   setNewProject((prev) => ({ ...prev, [field]: value }));
+  // };
+
+  const handleProjectChange = (index, field, value) => {
+    setManualForm((prev) => ({
+      ...prev,
+      projects: prev.projects.map((project, i) =>
+        i === index ? { ...project, [field]: value } : project
+      ),
+    }));
   };
 
-  const handleAddCertification = () => {
-    if (!newCertification.name || !newCertification.issuer) return;
-    handleAddItem("certifications", {
-      ...newCertification,
-      date: new Date().toLocaleDateString(),
-    });
-    setNewCertification({ name: "", issuer: "", date: "" });
+  const handleAddEducation = () => {
+    const lastEducation =
+      manualForm.education[manualForm.education.length - 1] || {};
+    if (
+      manualForm.education.length === 0 ||
+      (lastEducation.school &&
+        lastEducation.degree &&
+        lastEducation.startDate &&
+        lastEducation.cgpa)
+    ) {
+      setManualForm((prev) => ({
+        ...prev,
+        education: [
+          ...(prev.education || []),
+          {
+            school: "",
+            degree: "",
+            startDate: "",
+            endDate: "",
+            cgpa: "",
+          },
+        ],
+      }));
+    }
   };
 
-  const handleInternshipChange = (index, field, value) => {
-    const updated = [...(manualForm.internships || [])];
-    updated[index][field] = value;
-    setManualForm((prev) => ({ ...prev, internships: updated }));
-  };
-
-  const handleInternshipResponsibilityChange = (index, respIndex, value) => {
-    const updated = [...(manualForm.internships || [])];
-    updated[index].responsibilities[respIndex] = value;
-    setManualForm((prev) => ({ ...prev, internships: updated }));
-  };
-
-  const addInternshipResponsibility = (index) => {
-    const updated = [...(manualForm.internships || [])];
-    updated[index].responsibilities.push("");
-    setManualForm((prev) => ({ ...prev, internships: updated }));
-  };
-
-  const removeInternshipResponsibility = (index, respIndex) => {
-    const updated = [...(manualForm.internships || [])];
-    updated[index].responsibilities.splice(respIndex, 1);
-    setManualForm((prev) => ({ ...prev, internships: updated }));
+  // Handle changes to education fields, similar to handleProjectChange
+  const handleEducationChange = (index, field, value) => {
+    setManualForm((prev) => ({
+      ...prev,
+      education: prev.education.map((edu, i) =>
+        i === index ? { ...edu, [field]: value } : edu
+      ),
+    }));
   };
 
   const handleAddInternship = () => {
-    if (!newInternship.role || !newInternship.company) return;
-
-    if (editingIndex.internship !== null) {
-      handleEditItem("internships", editingIndex.internship, newInternship);
-      setEditingIndex({ ...editingIndex, internship: null });
-    } else {
+    // Only add a new internship if the last one is complete or if there are no internships
+    const lastInternship =
+      manualForm.internships[manualForm.internships.length - 1] || {};
+    if (
+      manualForm.internships.length === 0 ||
+      (lastInternship.role &&
+        lastInternship.company &&
+        lastInternship.startDate &&
+        lastInternship.description)
+    ) {
       setManualForm((prev) => ({
         ...prev,
-        internships: [...(prev.internships || []), newInternship],
+        internships: [
+          ...(prev.internships || []),
+          {
+            role: "",
+            company: "",
+            startDate: "",
+            endDate: "",
+            description: "• ",
+          },
+        ],
       }));
     }
-
-    setNewInternship({
-      role: "",
-      company: "",
-      startDate: "",
-      endDate: "",
-      description: [""],
-    });
   };
+
+  const handleRemoveInternship = (index) => {
+    setManualForm((prev) => ({
+      ...prev,
+      internships: prev.internships.filter((_, i) => i !== index),
+    }));
+  };
+
+  const handleAddProject = () => {
+    const lastProject =
+      manualForm.projects[manualForm.projects.length - 1] || {};
+    if (
+      manualForm.projects.length === 0 ||
+      (lastProject.title &&
+        lastProject.tech &&
+        lastProject.startDate &&
+        lastProject.description)
+    ) {
+      setManualForm((prev) => ({
+        ...prev,
+        projects: [
+          ...(prev.projects || []),
+          {
+            title: "",
+            tech: "",
+            startDate: "",
+            endDate: "",
+            description: "• ",
+          },
+        ],
+      }));
+    }
+  };
+
+  const handleRemoveProject = (index) => {
+    setManualForm((prev) => ({
+      ...prev,
+      projects: prev.projects.filter((_, i) => i !== index),
+    }));
+  };
+
+  const handleInternshipChange = (index, field, value) => {
+    setManualForm((prev) => ({
+      ...prev,
+      internships: prev.internships.map((internship, i) =>
+        i === index ? { ...internship, [field]: value } : internship
+      ),
+    }));
+  };
+
+  const handleAchievementChange = (index, field, value) => {
+    setManualForm((prev) => ({
+      ...prev,
+      achievements: prev.achievements.map((ach, i) =>
+        i === index ? { ...ach, [field]: value } : ach
+      ),
+    }));
+  };
+
+  const handleAddAchievement = () => {
+    // Only add a new achievement if the last one is complete or if there are no achievements
+    const lastAchievement =
+      manualForm.achievements[manualForm.achievements.length - 1] || {};
+    if (
+      manualForm.achievements.length === 0 ||
+      (lastAchievement.title && lastAchievement.description)
+    ) {
+      setManualForm((prev) => ({
+        ...prev,
+        achievements: [
+          ...(prev.achievements || []),
+          { title: "", description: "• " },
+        ],
+      }));
+    }
+  };
+
+  const handleRemoveAchievement = (index) => {
+    setManualForm((prev) => ({
+      ...prev,
+      achievements: prev.achievements.filter((_, i) => i !== index),
+    }));
+  };
+
+  const handleCertificationChange = (index, field, value) => {
+    setManualForm((prev) => ({
+      ...prev,
+      certifications: prev.certifications.map((cert, i) =>
+        i === index ? { ...cert, [field]: value } : cert
+      ),
+    }));
+  };
+
+  const handleAddCertification = () => {
+    const lastCertification =
+      manualForm.certifications[manualForm.certifications.length - 1] || {};
+    if (
+      manualForm.certifications.length === 0 ||
+      (lastCertification.title &&
+        lastCertification.issuer &&
+        lastCertification.date)
+    ) {
+      setManualForm((prev) => ({
+        ...prev,
+        certifications: [
+          ...(prev.certifications || []),
+          {
+            title: "",
+            issuer: "",
+            date: "",
+          },
+        ],
+      }));
+    }
+  };
+
+  // const handleInternshipChange = (index, field, value) => {
+  //   const updated = [...(manualForm.internships || [])];
+  //   updated[index][field] = value;
+  //   setManualForm((prev) => ({ ...prev, internships: updated }));
+  // };
 
   const handleEditItem = (field, index, updatedValue) => {
     setManualForm((prev) => ({
@@ -214,8 +449,13 @@ export default function ResumeForm() {
   };
 
   const handleEditAchievement = (index) => {
+    const achievement = manualForm.achievements[index];
     setEditingIndex({ ...editingIndex, achievement: index });
-    setNewAchievement(JSON.parse(JSON.stringify(manualForm.achievements[index])));
+    setNewAchievement({
+      title: achievement.title,
+      description:
+        achievement.description || achievement.points?.join("\n") || "",
+    });
   };
 
   const handleEditExperience = (index) => {
@@ -230,139 +470,272 @@ export default function ResumeForm() {
 
   const handleEditProject = (index) => {
     setEditingIndex({ ...editingIndex, project: index });
-    setNewProject(manualForm.projects[index]);
+    setNewProject({
+      ...manualForm.projects[index],
+    });
   };
 
   const handleEditInternship = (index) => {
-    setEditingIndex({ ...editingIndex, internship: index });
-    setNewInternship(manualForm.internships[index]);
+    setEditingIndex((prev) => ({ ...prev, internship: index }));
+    // No newInternship needed, editing happens directly on manualForm
+  };
+
+  // const handleAddExperience = () => {
+  //   if (!newExperience.jobTitle || !newExperience.company) return;
+
+  //   if (editingIndex.experience !== null) {
+  //     handleEditItem("experience", editingIndex.experience, newExperience);
+  //     setEditingIndex({ ...editingIndex, experience: null });
+  //   } else {
+  //     setManualForm((prev) => ({
+  //       ...prev,
+  //       experience: [...(prev.experience || []), newExperience],
+  //     }));
+  //   }
+
+  //   setNewExperience({
+  //     jobTitle: "",
+  //     company: "",
+  //     startDate: "",
+  //     endDate: "",
+  //     description: "",
+  //   });
+  // };
+
+  const handleExperienceChange = (index, field, value) => {
+    setManualForm((prev) => ({
+      ...prev,
+      experience: prev.experience.map((exp, i) =>
+        i === index ? { ...exp, [field]: value } : exp
+      ),
+    }));
   };
 
   const handleAddExperience = () => {
-    if (!newExperience.jobTitle || !newExperience.company) return;
-
-    if (editingIndex.experience !== null) {
-      handleEditItem("experience", editingIndex.experience, newExperience);
-      setEditingIndex({ ...editingIndex, experience: null });
-    } else {
+    const lastExperience =
+      manualForm.experience[manualForm.experience.length - 1] || {};
+    if (
+      manualForm.experience.length === 0 ||
+      (lastExperience.role &&
+        lastExperience.company &&
+        lastExperience.startDate &&
+        lastExperience.description)
+    ) {
       setManualForm((prev) => ({
         ...prev,
-        experience: [...(prev.experience || []), newExperience],
+        experience: [
+          ...(prev.experience || []),
+          {
+            role: "",
+            company: "",
+            startDate: "",
+            endDate: "",
+            description: "• ",
+          },
+        ],
       }));
     }
-
-    setNewExperience({
-      jobTitle: "",
-      company: "",
-      startDate: "",
-      endDate: "",
-      description: "",
-    });
   };
 
-  const handleAddEducation = () => {
-    if (!newEducation.degree || !newEducation.school) return;
-
-    if (editingIndex.education !== null) {
-      handleEditItem("education", editingIndex.education, newEducation);
-      setEditingIndex({ ...editingIndex, education: null });
-    } else {
-      setManualForm((prev) => ({
-        ...prev,
-        education: [...(prev.education || []), newEducation],
-      }));
-    }
-
-    setNewEducation({
-      degree: "",
-      school: "",
-      startDate: "",
-      endDate: "",
-    });
+  const handleRemoveExperience = (index) => {
+    setManualForm((prev) => ({
+      ...prev,
+      experience: prev.experience.filter((_, i) => i !== index),
+    }));
   };
 
-  const handleAddProject = () => {
-    if (!newProject.title || newProject.points.length === 0) return;
+  // const handleAddEducation = () => {
+  //   if (!newEducation.degree || !newEducation.school) return;
 
-    if (editingIndex.project !== null) {
-      handleEditItem("projects", editingIndex.project, newProject);
-      setEditingIndex({ ...editingIndex, project: null });
-    } else {
-      setManualForm((prev) => ({
-        ...prev,
-        projects: [...(prev.projects || []), newProject],
-      }));
-    }
+  //   if (editingIndex.education !== null) {
+  //     handleEditItem("education", editingIndex.education, newEducation);
+  //     setEditingIndex({ ...editingIndex, education: null });
+  //   } else {
+  //     setManualForm((prev) => ({
+  //       ...prev,
+  //       education: [...(prev.education || []), newEducation],
+  //     }));
+  //   }
 
-    setNewProject({
-      title: "",
-      startDate: "",
-      endDate: "",
-      tech: "",
-      points: [],
-    });
+  //   setNewEducation({
+  //     degree: "",
+  //     school: "",
+  //     startDate: "",
+  //     endDate: "",
+  //     cgpa: "", // Add this line
+  //   });
+  // };
+
+  const handleRemoveEducation = (index) => {
+    setManualForm((prev) => ({
+      ...prev,
+      education: (prev.education || []).filter((_, i) => i !== index),
+    }));
   };
 
-  const handleAddAchievement = () => {
-    if (!newAchievement.title || newAchievement.points.length === 0) return;
-
-    if (editingIndex.achievement !== null) {
-      handleEditItem("achievements", editingIndex.achievement, newAchievement);
-      setEditingIndex({ ...editingIndex, achievement: null });
-    } else {
-      setManualForm((prev) => ({
-        ...prev,
-        achievements: [...(prev.achievements || []), newAchievement],
-      }));
-    }
-
-    setNewAchievement({
-      title: "",
-      points: [],
-    });
-     setNewPoint(""); // Clear the point input after adding
+  const handleRemoveCertification = (index) => {
+    setManualForm((prev) => ({
+      ...prev,
+      certifications: prev.certifications.filter((_, i) => i !== index),
+    }));
   };
+
+  // const handleAddProject = () => {
+  //   if (!newProject.title || !newProject.description) return;
+
+  //   if (editingIndex.project !== null) {
+  //     handleEditItem("projects", editingIndex.project, newProject);
+  //     setEditingIndex({ ...editingIndex, project: null });
+  //   } else {
+  //     setManualForm((prev) => ({
+  //       ...prev,
+  //       projects: [...(prev.projects || []), newProject],
+  //     }));
+  //   }
+
+  //   setNewProject({
+  //     title: "",
+  //     startDate: "",
+  //     endDate: "",
+  //     tech: "",
+  //     description: "",
+  //   });
+  // };
+
+  // const handleAddAchievement = () => {
+  //   if (!newAchievement.title || !newAchievement.description) return;
+
+  //   const achievementToAdd = {
+  //     title: newAchievement.title,
+  //     description: newAchievement.description,
+  //   };
+
+  //   if (editingIndex.achievement !== null) {
+  //     handleEditItem(
+  //       "achievements",
+  //       editingIndex.achievement,
+  //       achievementToAdd
+  //     );
+  //   } else {
+  //     setManualForm((prev) => ({
+  //       ...prev,
+  //       achievements: [...(prev.achievements || []), achievementToAdd],
+  //     }));
+  //   }
+
+  //   setNewAchievement({
+  //     title: "",
+  //     description: "",
+  //   });
+  //   setEditingIndex({ ...editingIndex, achievement: null });
+  // };
+
+  useEffect(() => {
+    setShowSections((prev) => ({
+      ...prev,
+      internships: toggle === "fresher" ? true : prev.internships,
+    }));
+  }, [toggle]);
 
   useEffect(() => {
     console.log("Current manualForm state:", manualForm);
   }, [manualForm]);
 
   return (
-    <section className="space-y-1 max-w-3xl mx-auto bg-white shadow-lg p-5 rounded-xl border border-gray-200">
+    <section className="space-y-1 max-w-3xl mx-auto bg-white shadow-lg p-5 rounded-xl ">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold text-gray-800">Resume Builder</h1>
       </div>
 
+      <div className="flex gap-4 mb-6">
+        <button
+          type="button"
+          className={`px-4 py-2 rounded-md transition-all duration-300 transform ${
+            toggle === "fresher"
+              ? "bg-blue-600 text-white shadow-md scale-105"
+              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+          }`}
+          onClick={() => setToggle("fresher")}
+          aria-pressed={toggle === "fresher"}
+          aria-label="Switch to Fresher mode"
+        >
+          Fresher
+        </button>
+        <button
+          type="button"
+          className={`px-4 py-2 rounded-md transition-all duration-300 transform ${
+            toggle === "experienced"
+              ? "bg-blue-600 text-white shadow-md scale-105"
+              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+          }`}
+          onClick={() => setToggle("experienced")}
+          aria-pressed={toggle === "experienced"}
+          aria-label="Switch to Experienced mode"
+        >
+          Experienced
+        </button>
+      </div>
+
       {/* Upload Box */}
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-gray-700">Upload Resume</h3>
+        {/* <h3 className="text-lg font-semibold text-gray-700">Upload Resume</h3> */}
         <div
-          className="flex items-center justify-center border border-dashed border-blue-400 rounded-md p-4 text-blue-600 bg-blue-50 hover:bg-blue-100 transition cursor-pointer"
-          onClick={() => fileInputRef.current.click()}
-          onDrop={handleDrop}
-          onDragOver={handleDragOver}
+          className={`flex items-center justify-center border border-dashed border-blue-400 rounded-md p-4 text-blue-600 bg-blue-50 hover:bg-blue-100 transition cursor-pointer ${
+            uploadLoading ? "opacity-50 cursor-not-allowed" : ""
+          }`}
+          onClick={() => !uploadLoading && fileInputRef.current.click()}
+          onDrop={uploadLoading ? null : handleDrop}
+          onDragOver={uploadLoading ? null : handleDragOver}
         >
           <div className="flex items-center gap-3">
-            <CloudUpload className="w-6 h-6 text-blue-500" />
-            <div className="text-sm">
-              {resumeFiles ? (
-                <>
-                  <div className="font-medium">{resumeFiles.name}</div>
-                  <div className="text-xs text-gray-600">
-                    Click or drag to change
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="font-medium">
-                    Click or drag to upload resume
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    (.pdf, .docx, .txt)
-                  </div>
-                </>
-              )}
-            </div>
+            {uploadLoading ? (
+              <div className="flex items-center gap-2">
+                <svg
+                  className="animate-spin h-6 w-6 text-blue-500"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
+                </svg>
+                <span className="font-medium">Uploading...</span>
+              </div>
+            ) : (
+              <>
+                <CloudUpload className="w-6 h-6 text-blue-500" />
+                <div className="text-sm">
+                  {resumeFiles ? (
+                    <>
+                      <div className="font-medium">{resumeFiles.name}</div>
+                      <div className="text-xs text-gray-600">
+                        Click or drag to change
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="font-medium">
+                        Click or drag to upload resume
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        (.pdf, .docx, .txt)
+                      </div>
+                    </>
+                  )}
+                </div>
+              </>
+            )}
           </div>
           <input
             type="file"
@@ -370,6 +743,7 @@ export default function ResumeForm() {
             ref={fileInputRef}
             className="hidden"
             onChange={handleFileChange}
+            disabled={uploadLoading} // Disable input during loading
           />
         </div>
       </div>
@@ -384,7 +758,7 @@ export default function ResumeForm() {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm text-gray-500 mb-1">
-              Your Name
+              Full Name
             </label>
             <input
               type="text"
@@ -392,6 +766,9 @@ export default function ResumeForm() {
               value={manualForm.Name || ""}
               onChange={(e) => handleFieldChange("Name", e.target.value)}
             />
+            {!manualForm.Name && (
+              <p className="text-red-500 text-xs mt-1">Name is required</p>
+            )}
           </div>
           <div>
             <label className="block text-sm text-gray-500 mb-1">
@@ -413,6 +790,9 @@ export default function ResumeForm() {
               onChange={(e) => handleFieldChange("email", e.target.value)}
               placeholder="your.email@example.com"
             />
+            {!manualForm.email && (
+              <p className="text-red-500 text-xs mt-1">Email is required</p>
+            )}
           </div>
           <div>
             <label className="block text-sm text-gray-500 mb-1">Phone</label>
@@ -423,6 +803,9 @@ export default function ResumeForm() {
               onChange={(e) => handleFieldChange("phone", e.target.value)}
               placeholder="123-456-7890"
             />
+            {!manualForm.phone && (
+              <p className="text-red-500 text-xs mt-1">Phone is required</p>
+            )}
           </div>
           <div>
             <label className="block text-sm text-gray-500 mb-1">Location</label>
@@ -459,303 +842,444 @@ export default function ResumeForm() {
 
       <div className="border-t border-gray-300 my-4"></div>
 
-      {/* Professional Summary Section */}
-      <div className="space-y-4">
-        <div className="flex justify-between items-center">
-          <h2 className="text-xl font-semibold text-gray-700">
-            Professional Summary
-          </h2>
-          <button
-            className="bg-blue-50 text-blue-600 px-3 py-1 rounded-md text-sm hover:bg-blue-100 transition-colors"
-            onClick={async () => {
-              if (!manualForm.summary?.trim()) {
-                alert("Please enter some text first");
-                return;
-              }
-
-              try {
-                const response = await fetch(
-                  "http://127.0.0.1:5000/enhance-summary",
-                  {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ text: manualForm.summary }),
-                  }
-                );
-
-                const data = await response.json();
-                if (response.ok) {
-                  handleFieldChange("summary", data.enhancedText);
-                } else {
-                  alert(data.error || "Enhancement failed");
+      {/* Professional Summary (for Experienced) */}
+      {toggle === "experienced" && (
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-semibold text-gray-700">
+              Professional Summary
+            </h2>
+            <button
+              className="bg-blue-50 text-blue-600 px-3 py-1 rounded-md text-sm hover:bg-blue-100 transition-colors"
+              onClick={async () => {
+                if (!manualForm.summary?.trim()) {
+                  alert("Please enter some text first");
+                  return;
                 }
-              } catch (error) {
-                alert("Failed to connect to server");
-              }
-            }}
-          >
-            Enhance with AI
-          </button>
+                const enhanced = await enhanceField(
+                  "summary",
+                  manualForm.summary
+                );
+                handleFieldChange("summary", enhanced);
+              }}
+            >
+              Enhance with AI
+            </button>
+          </div>
+          <textarea
+            rows={4}
+            className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-300 outline-none"
+            value={manualForm.summary || ""}
+            onChange={(e) => handleFieldChange("summary", e.target.value)}
+            placeholder="A brief summary about your professional background..."
+          />
         </div>
-        <textarea
-          rows={4}
-          className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-300 outline-none"
-          value={manualForm.summary || ""}
-          onChange={(e) => handleFieldChange("summary", e.target.value)}
-          placeholder="A brief summary about your professional background..."
-        />
-      </div>
-
-      <div className="border-t border-gray-300 my-4"></div>
+      )}
 
       {/* Experience Section */}
-      <div className="space-y-4">
-        <h2 className="text-xl font-semibold text-gray-700">Experience</h2>
+      {/* Experience Section - Only shown for experienced candidates */}
+      {toggle === "experienced" && (
+        <div className="space-y-4 mb-6">
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-semibold text-gray-700">Experience</h2>
+            <div className="text-sm text-gray-500">
+              {(manualForm.experience ?? []).length} experience(s) added
+            </div>
+          </div>
 
-        {(manualForm.experience || []).map((exp, index) => (
-          <div
-            key={index}
-            className="border border-gray-200 rounded-md p-4 relative"
-          >
-            <div className="flex justify-between">
-              <div>
-                <h3 className="font-medium">{exp.jobTitle || "Job Title"}</h3>
-                <p className="text-sm text-gray-600">
-                  {exp.company || "Company"}
+          {(manualForm.experience || []).map((exp, index) => (
+            <div
+              key={index}
+              className="border border-gray-200 rounded-md p-4 relative group hover:bg-gray-50 transition-colors"
+            >
+              <div className="grid grid-cols-2 gap-4 mb-3">
+                <div>
+                  <label className="block text-sm text-gray-500 mb-1">
+                    Role*
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full border border-gray-300 rounded-md p-2 text-sm"
+                    value={exp.role || ""}
+                    onChange={(e) =>
+                      handleExperienceChange(index, "role", e.target.value)
+                    }
+                    required
+                  />
+                  {!exp.role && (
+                    <p className="text-red-500 text-xs mt-1">
+                      Role is required
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-500 mb-1">
+                    Company*
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full border border-gray-300 rounded-md p-2 text-sm"
+                    value={exp.company || ""}
+                    onChange={(e) =>
+                      handleExperienceChange(index, "company", e.target.value)
+                    }
+                    required
+                  />
+                  {!exp.company && (
+                    <p className="text-red-500 text-xs mt-1">
+                      Company is required
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-500 mb-1">
+                    Start Date*
+                  </label>
+                  <input
+                    type="date"
+                    className="w-full border border-gray-300 rounded-md p-2 text-sm"
+                    value={exp.startDate || ""}
+                    onChange={(e) =>
+                      handleExperienceChange(index, "startDate", e.target.value)
+                    }
+                    required
+                  />
+                  {!exp.startDate && (
+                    <p className="text-red-500 text-xs mt-1">
+                      Start Date is required
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-500 mb-1">
+                    End Date
+                  </label>
+                  <div className="flex items-center gap-2">
+                    {exp.endDate === "Present" ? (
+                      <input
+                        type="text"
+                        className="w-full border border-gray-300 rounded-md p-2 text-sm bg-gray-100"
+                        value="Present"
+                        disabled
+                      />
+                    ) : (
+                      <input
+                        type="date"
+                        className="w-full border border-gray-300 rounded-md p-2 text-sm"
+                        value={exp.endDate || ""}
+                        onChange={(e) =>
+                          handleExperienceChange(
+                            index,
+                            "endDate",
+                            e.target.value
+                          )
+                        }
+                      />
+                    )}
+                    <label className="text-sm whitespace-nowrap">
+                      <input
+                        type="checkbox"
+                        className="mr-1"
+                        checked={exp.endDate === "Present"}
+                        onChange={(e) =>
+                          handleExperienceChange(
+                            index,
+                            "endDate",
+                            e.target.checked ? "Present" : ""
+                          )
+                        }
+                      />
+                      Currently working here
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mb-3">
+                <div className="flex justify-between items-center mb-1">
+                  <label className="block text-sm text-gray-500">
+                    Responsibilities*
+                  </label>
+                  <button
+                    onClick={async () => {
+                      const enhanced = await enhanceField(
+                        "experience",
+                        exp.description || "",
+                        { role: exp.role, company: exp.company }
+                      );
+                      handleExperienceChange(index, "description", enhanced);
+                    }}
+                    className="bg-blue-100 text-blue-600 px-2 py-1 rounded text-sm hover:bg-blue-200 flex items-center gap-1"
+                    disabled={enhancingField === "experience"}
+                  >
+                    {enhancingField === "experience" ? (
+                      <>
+                        <svg
+                          className="animate-spin h-4 w-4"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="11"
+                            cy="11"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          ></circle>
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          ></path>
+                        </svg>
+                        Enhancing...
+                      </>
+                    ) : (
+                      <>
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-4 w-4"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M12.316 3.051a1 1 0 01.633 1.265l-4 12a1 1 0 11-1.898-.632l4-12a1 1 0 011.265-.633zM5.707 6.293a1 1 0 010 1.414L3.414 10l2.293 2.293a1 1 0 11-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0zm8.586 0a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 11-1.414-1.414L16.586 10l-2.293-2.293a1 1 0 010-1.414z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                        Enhance with AI
+                      </>
+                    )}
+                  </button>
+                </div>
+                <textarea
+                  rows={4}
+                  value={exp.description || ""}
+                  onChange={(e) =>
+                    handleExperienceChange(index, "description", e.target.value)
+                  }
+                  onFocus={() => {
+                    if (!exp.description) {
+                      handleExperienceChange(index, "description", "• ");
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (
+                      e.key === "Backspace" &&
+                      exp.description &&
+                      exp.description.endsWith("• ")
+                    ) {
+                      e.preventDefault();
+                      handleExperienceChange(
+                        index,
+                        "description",
+                        exp.description.slice(0, -2)
+                      );
+                    }
+                  }}
+                  placeholder="Start typing (bullet points auto-added)..."
+                  className="w-full border border-gray-300 rounded-md p-2 text-sm"
+                />
+                <p className="text-xs text-gray-500 mb-1">
+                  Tip: Press{" "}
+                  <kbd className="bg-gray-100 px-1 rounded">Enter</kbd> to
+                  create bullet points.
                 </p>
               </div>
-              <div className="text-sm text-gray-500">
-                {exp.startDate || "Start Date"} - {exp.endDate || "End Date"}
+
+              <div className="flex gap-2 absolute bottom-2 right-2">
+                <button
+                  className="p-2 rounded-full bg-red-100 text-red-600 hover:bg-red-200 transition-colors flex items-center justify-center"
+                  onClick={() => handleRemoveExperience(index)}
+                  title="Delete Experience"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
               </div>
             </div>
-            <p className="mt-2 text-sm text-gray-700">
-              {exp.description || "Job responsibilities and achievements..."}
-            </p>
-            <button
-              className="text-blue-500 text-sm"
-              onClick={() => handleEditExperience(index)}
-            >
-              Edit
-            </button>
-            <button
-              className="absolute top-2 right-2 text-red-500 text-sm"
-              onClick={() => handleRemoveItem("experience", index)}
-            >
-              Delete
-            </button>
-          </div>
-        ))}
+          ))}
 
-        <div className="border-t border-gray-300 my-4"></div>
-
-        <div className="space-y-3">
-          <h3 className="font-medium">Add Experience</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm text-gray-500 mb-1">
-                Job Title
-              </label>
-              <input
-                type="text"
-                className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-300 outline-none"
-                value={newExperience.jobTitle}
-                onChange={(e) =>
-                  setNewExperience({
-                    ...newExperience,
-                    jobTitle: e.target.value,
-                  })
-                }
-              />
-            </div>
-            <div>
-              <label className="block text-sm text-gray-500 mb-1">
-                Company
-              </label>
-              <input
-                type="text"
-                className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-300 outline-none"
-                value={newExperience.company}
-                onChange={(e) =>
-                  setNewExperience({
-                    ...newExperience,
-                    company: e.target.value,
-                  })
-                }
-              />
-            </div>
-            <div>
-              <label className="block text-sm text-gray-500 mb-1">
-                Start Date
-              </label>
-              <input
-                type="text"
-                className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-300 outline-none"
-                value={newExperience.startDate}
-                onChange={(e) =>
-                  setNewExperience({
-                    ...newExperience,
-                    startDate: e.target.value,
-                  })
-                }
-                placeholder="Jan 2020"
-              />
-            </div>
-            <div>
-              <label className="block text-sm text-gray-500 mb-1">
-                End Date
-              </label>
-              <input
-                type="text"
-                className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-300 outline-none"
-                value={newExperience.endDate}
-                onChange={(e) =>
-                  setNewExperience({
-                    ...newExperience,
-                    endDate: e.target.value,
-                  })
-                }
-                placeholder="Present"
-              />
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm text-gray-500 mb-1">
-              Description
-            </label>
-            <textarea
-              rows={3}
-              className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-300 outline-none"
-              value={newExperience.description}
-              onChange={(e) =>
-                setNewExperience({
-                  ...newExperience,
-                  description: e.target.value,
-                })
+          <div className="mt-4">
+            <button
+              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition text-sm"
+              onClick={handleAddExperience}
+              disabled={
+                manualForm.experience.length > 0 &&
+                (!manualForm.experience[manualForm.experience.length - 1]
+                  ?.role ||
+                  !manualForm.experience[manualForm.experience.length - 1]
+                    ?.company ||
+                  !manualForm.experience[manualForm.experience.length - 1]
+                    ?.startDate ||
+                  !manualForm.experience[manualForm.experience.length - 1]
+                    ?.description)
               }
-              placeholder="Job responsibilities and achievements..."
-            />
+            >
+              Add Experience
+            </button>
           </div>
-          <button
-            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition text-sm"
-            onClick={handleAddExperience}
-          >
-            {editingIndex.experience !== null
-              ? "Update Experience"
-              : "Add Experience"}
-          </button>
         </div>
-      </div>
-
+      )}
       <div className="border-t border-gray-300 my-4"></div>
 
       {/* Education Section */}
-      <div className="space-y-4">
-        <h2 className="text-xl font-semibold text-gray-700">Education</h2>
+      <div className="space-y-4 mb-6">
+        <div className="flex justify-between items-center">
+          <h2 className="text-xl font-semibold text-gray-700">Education</h2>
+          <div className="text-sm text-gray-500">
+            {(manualForm.education ?? []).length} education(s) added
+          </div>
+        </div>
 
         {(manualForm.education || []).map((edu, index) => (
           <div
             key={index}
-            className="border border-gray-200 rounded-md p-4 relative"
+            className="border border-gray-200 rounded-md p-4 relative group hover:bg-gray-50 transition-colors"
           >
-            <div className="flex justify-between">
+            <div className="grid grid-cols-2 gap-4 mb-3">
               <div>
-                <h3 className="font-medium">
-                  {edu.degree || "Degree (e.g., B.S. in Computer Science)"}
-                </h3>
-                <p className="text-sm text-gray-600">
-                  {edu.school || "School/University"}
-                </p>
+                <label className="block text-sm text-gray-500 mb-1">
+                  Institution*
+                </label>
+                <input
+                  type="text"
+                  className="w-full border border-gray-300 rounded-md p-2 text-sm"
+                  value={edu.school || ""}
+                  onChange={(e) =>
+                    handleEducationChange(index, "school", e.target.value)
+                  }
+                  required
+                />
+                {!edu.school && (
+                  <p className="text-red-500 text-xs mt-1">
+                    Institution is required
+                  </p>
+                )}
               </div>
-              <div className="text-sm text-gray-500">
-                {edu.startDate || "Start Date"} - {edu.endDate || "End Date"}
+              <div>
+                <label className="block text-sm text-gray-500 mb-1">
+                  Degree*
+                </label>
+                <input
+                  type="text"
+                  className="w-full border border-gray-300 rounded-md p-2 text-sm"
+                  value={edu.degree || ""}
+                  onChange={(e) =>
+                    handleEducationChange(index, "degree", e.target.value)
+                  }
+                  required
+                />
+                {!edu.degree && (
+                  <p className="text-red-500 text-xs mt-1">
+                    Degree is required
+                  </p>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm text-gray-500 mb-1">
+                  Start Date*
+                </label>
+                <input
+                  type="date"
+                  className="w-full border border-gray-300 rounded-md p-2 text-sm"
+                  value={edu.startDate || ""}
+                  onChange={(e) =>
+                    handleEducationChange(index, "startDate", e.target.value)
+                  }
+                  required
+                />
+                {!edu.startDate && (
+                  <p className="text-red-500 text-xs mt-1">
+                    Start Date is required
+                  </p>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm text-gray-500 mb-1">
+                  End Date
+                </label>
+                <div className="flex items-center gap-2">
+                  {edu.endDate === "Present" ? (
+                    <input
+                      type="text"
+                      className="w-full border border-gray-300 rounded-md p-2 text-sm bg-gray-100"
+                      value="Present"
+                      disabled
+                    />
+                  ) : (
+                    <input
+                      type="date"
+                      className="w-full border border-gray-300 rounded-md p-2 text-sm"
+                      value={edu.endDate || ""}
+                      onChange={(e) =>
+                        handleEducationChange(index, "endDate", e.target.value)
+                      }
+                    />
+                  )}
+                  <label className="text-sm whitespace-nowrap">
+                    <input
+                      type="checkbox"
+                      className="mr-1"
+                      checked={edu.endDate === "Present"}
+                      onChange={(e) =>
+                        handleEducationChange(
+                          index,
+                          "endDate",
+                          e.target.checked ? "Present" : ""
+                        )
+                      }
+                    />
+                    Currently pursuing
+                  </label>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm text-gray-500 mb-1">CGPA</label>
+                <input
+                  type="text"
+                  className="w-full border border-gray-300 rounded-md p-2 text-sm"
+                  value={edu.cgpa || ""}
+                  onChange={(e) =>
+                    handleEducationChange(index, "cgpa", e.target.value)
+                  }
+                  required
+                />
+                {!edu.cgpa && (
+                  <p className="text-red-500 text-xs mt-1">
+                    CGPA/Percentage is required
+                  </p>
+                )}
               </div>
             </div>
 
-            <button
-              className="text-blue-500 text-sm"
-              onClick={() => handleEditEducation(index)}
-            >
-              Edit
-            </button>
-
-            <button
-              className="absolute top-2 right-2 text-red-500 text-sm"
-              onClick={() => handleRemoveItem("education", index)}
-            >
-              Delete
-            </button>
+            <div className="flex gap-2 absolute bottom-2 right-2">
+              <button
+                className="p-2 rounded-full bg-red-100 text-red-600 hover:bg-red-200 transition-colors flex items-center justify-center"
+                onClick={() => handleRemoveEducation(index)}
+                title="Delete Education"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         ))}
 
-        <div className="border-t border-gray-300 my-4"></div>
-
-        <div className="space-y-3">
-          <h3 className="font-medium">Add Education</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm text-gray-500 mb-1">Degree</label>
-              <input
-                type="text"
-                className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-300 outline-none"
-                value={newEducation.degree}
-                onChange={(e) =>
-                  setNewEducation({ ...newEducation, degree: e.target.value })
-                }
-                placeholder="B.S. in Computer Science"
-              />
-            </div>
-            <div>
-              <label className="block text-sm text-gray-500 mb-1">
-                School/University
-              </label>
-              <input
-                type="text"
-                className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-300 outline-none"
-                value={newEducation.school}
-                onChange={(e) =>
-                  setNewEducation({ ...newEducation, school: e.target.value })
-                }
-              />
-            </div>
-            <div>
-              <label className="block text-sm text-gray-500 mb-1">
-                Start Date
-              </label>
-              <input
-                type="text"
-                className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-300 outline-none"
-                value={newEducation.startDate}
-                onChange={(e) =>
-                  setNewEducation({
-                    ...newEducation,
-                    startDate: e.target.value,
-                  })
-                }
-                placeholder="Aug 2016"
-              />
-            </div>
-            <div>
-              <label className="block text-sm text-gray-500 mb-1">
-                End Date
-              </label>
-              <input
-                type="text"
-                className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-300 outline-none"
-                value={newEducation.endDate}
-                onChange={(e) =>
-                  setNewEducation({ ...newEducation, endDate: e.target.value })
-                }
-                placeholder="May 2020"
-              />
-            </div>
-          </div>
+        <div className="mt-4">
           <button
             className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition text-sm"
             onClick={handleAddEducation}
+            disabled={
+              manualForm.education.length > 0 &&
+              (!manualForm.education[manualForm.education.length - 1]?.school ||
+                !manualForm.education[manualForm.education.length - 1]
+                  ?.degree ||
+                !manualForm.education[manualForm.education.length - 1]
+                  ?.startDate ||
+                !manualForm.education[manualForm.education.length - 1]?.cgpa)
+            }
           >
-            {editingIndex.education !== null
-              ? "Update Education"
-              : "Add Education"}
+            Add Education
           </button>
         </div>
       </div>
@@ -763,7 +1287,8 @@ export default function ResumeForm() {
       <div className="border-t border-gray-300 my-4"></div>
 
       {/* Skills Section */}
-      <div className="space-y-4">
+      {/* Skills Section */}
+      <div className="space-y-4 relative">
         <h2 className="text-xl font-semibold text-gray-700">Skills</h2>
         <div className="flex flex-wrap gap-2">
           {(manualForm.skills || []).map((skill, index) => (
@@ -781,19 +1306,48 @@ export default function ResumeForm() {
             </div>
           ))}
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 relative">
           <input
             type="text"
             className="flex-1 border border-gray-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-300 outline-none"
-            placeholder="Add a skill and press Enter"
+            placeholder="Add a skill (start typing for suggestions)"
             value={newSkill}
-            onChange={(e) => setNewSkill(e.target.value)}
+            onChange={(e) => {
+              setNewSkill(e.target.value);
+              if (e.target.value.length > 0) {
+                fetchSkillSuggestions(e.target.value);
+              } else {
+                setShowSuggestions(false);
+              }
+            }}
             onKeyDown={(e) => {
-              if (e.key === "Enter" && newSkill) {
+              // Handle arrow keys and enter for suggestions
+              if (showSuggestions && skillSuggestions.length > 0) {
+                if (e.key === "ArrowDown") {
+                  e.preventDefault();
+                  setActiveSuggestionIndex((prev) =>
+                    Math.min(prev + 1, skillSuggestions.length - 1)
+                  );
+                } else if (e.key === "ArrowUp") {
+                  e.preventDefault();
+                  setActiveSuggestionIndex((prev) => Math.max(prev - 1, 0));
+                } else if (e.key === "Enter") {
+                  e.preventDefault();
+                  if (skillSuggestions[activeSuggestionIndex]) {
+                    handleAddItem(
+                      "skills",
+                      skillSuggestions[activeSuggestionIndex]
+                    );
+                    setNewSkill("");
+                    setShowSuggestions(false);
+                  }
+                }
+              } else if (e.key === "Enter" && newSkill) {
                 handleAddItem("skills", newSkill);
                 setNewSkill("");
               }
             }}
+            onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
           />
           <button
             className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition text-sm"
@@ -801,14 +1355,35 @@ export default function ResumeForm() {
               if (newSkill) {
                 handleAddItem("skills", newSkill);
                 setNewSkill("");
+                setShowSuggestions(false);
               }
             }}
           >
             Add
           </button>
         </div>
-      </div>
 
+        {/* Skill Suggestions Dropdown */}
+        {showSuggestions && newSkill && skillSuggestions.length > 0 && (
+          <ul className="absolute z-10 top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+            {skillSuggestions.map((suggestion, index) => (
+              <li
+                key={index}
+                className={`p-2 cursor-pointer hover:bg-blue-50 ${
+                  index === activeSuggestionIndex ? "bg-blue-100" : ""
+                }`}
+                onClick={() => {
+                  handleAddItem("skills", suggestion);
+                  setNewSkill("");
+                  setShowSuggestions(false);
+                }}
+              >
+                {suggestion}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
       <div className="border-t border-gray-300 my-4"></div>
 
       {/* Languages Section */}
@@ -912,172 +1487,269 @@ export default function ResumeForm() {
       <div className="border-t border-gray-300 my-4"></div>
 
       {/* Projects Section */}
-      <div className="space-y-4">
-        <h2 className="text-xl font-semibold text-gray-700">Projects</h2>
+      <div className="space-y-4 mb-6">
+        <div className="flex justify-between items-center">
+          <h2 className="text-xl font-semibold text-gray-700">Projects</h2>
+          <div className="text-sm text-gray-500">
+            {(manualForm.projects ?? []).length} project(s) added
+          </div>
+        </div>
 
         {(manualForm.projects || []).map((project, index) => (
           <div
             key={index}
-            className="border border-gray-200 rounded-md p-4 relative"
+            className="border border-gray-200 rounded-md p-4 relative group hover:bg-gray-50 transition-colors"
           >
-            <div className="flex justify-between">
+            <div className="grid grid-cols-2 gap-4 mb-3">
               <div>
-                <h3 className="font-medium">{project.title}</h3>
-                <p className="text-sm text-gray-600">{project.tech}</p>
+                <label className="block text-sm text-gray-500 mb-1">
+                  Title*
+                </label>
+                <input
+                  type="text"
+                  className="w-full border border-gray-300 rounded-md p-2 text-sm"
+                  value={project.title || ""}
+                  onChange={(e) =>
+                    handleProjectChange(index, "title", e.target.value)
+                  }
+                  required
+                />
+                {!project.title && (
+                  <p className="text-red-500 text-xs mt-1">Title is required</p>
+                )}
               </div>
-              <div className="text-sm text-gray-500">
-                {project.startDate} - {project.endDate}
+              <div>
+                <label className="block text-sm text-gray-500 mb-1">
+                  Tech Stack*
+                </label>
+                <input
+                  type="text"
+                  className="w-full border border-gray-300 rounded-md p-2 text-sm"
+                  value={project.tech || ""}
+                  onChange={(e) =>
+                    handleProjectChange(index, "tech", e.target.value)
+                  }
+                  required
+                />
+                {!project.tech && (
+                  <p className="text-red-500 text-xs mt-1">
+                    Tech Stack is required
+                  </p>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm text-gray-500 mb-1">
+                  Start Date*
+                </label>
+                <input
+                  type="date"
+                  className="w-full border border-gray-300 rounded-md p-2 text-sm"
+                  value={project.startDate || ""}
+                  onChange={(e) =>
+                    handleProjectChange(index, "startDate", e.target.value)
+                  }
+                  required
+                />
+                {!project.startDate && (
+                  <p className="text-red-500 text-xs mt-1">
+                    Start Date is required
+                  </p>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm text-gray-500 mb-1">
+                  End Date
+                </label>
+                <div className="flex items-center gap-2">
+                  {project.endDate === "Present" ? (
+                    <input
+                      type="text"
+                      className="w-full border border-gray-300 rounded-md p-2 text-sm bg-gray-100"
+                      value="Present"
+                      disabled
+                    />
+                  ) : (
+                    <input
+                      type="date"
+                      className="w-full border border-gray-300 rounded-md p-2 text-sm"
+                      value={project.endDate || ""}
+                      onChange={(e) =>
+                        handleProjectChange(index, "endDate", e.target.value)
+                      }
+                    />
+                  )}
+                  <label className="text-sm whitespace-nowrap">
+                    <input
+                      type="checkbox"
+                      className="mr-1"
+                      checked={project.endDate === "Present"}
+                      onChange={(e) =>
+                        handleProjectChange(
+                          index,
+                          "endDate",
+                          e.target.checked ? "Present" : ""
+                        )
+                      }
+                    />
+                    Currently working on
+                  </label>
+                </div>
               </div>
             </div>
-            <ul className="mt-2 list-disc list-inside text-sm text-gray-700 space-y-1">
-              {project.points?.map((point, i) => (
-                <li key={i}>{point}</li>
-              ))}
-            </ul>
 
-            <button
-              className="text-blue-500 text-sm"
-              onClick={() => handleEditProject(index)}
-            >
-              Edit
-            </button>
-            <button
-              className="absolute top-2 right-2 text-red-500 text-sm"
-              onClick={() => handleRemoveItem("projects", index)}
-            >
-              Delete
-            </button>
+            <div className="mb-3">
+              <div className="flex justify-between items-center mb-1">
+                <label className="block text-sm text-gray-500">
+                  Description*
+                </label>
+                <button
+                  onClick={async () => {
+                    const enhanced = await enhanceField(
+                      "project",
+                      project.description || "",
+                      { title: project.title, tech: project.tech }
+                    );
+                    handleProjectChange(index, "description", enhanced);
+                  }}
+                  className="bg-blue-100 text-blue-600 px-2 py-1 rounded text-sm hover:bg-blue-200 flex items-center gap-1"
+                  disabled={enhancingField === "project"}
+                >
+                  {enhancingField === "project" ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                      Enhancing...
+                    </>
+                  ) : (
+                    <>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-4 w-4"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M12.316 3.051a1 1 0 01.633 1.265l-4 12a1 1 0 11-1.898-.632l4-12a1 1 0 011.265-.633zM5.707 6.293a1 1 0 010 1.414L3.414 10l2.293 2.293a1 1 0 11-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0zm8.586 0a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 11-1.414-1.414L16.586 10l-2.293-2.293a1 1 0 010-1.414z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      Enhance with AI
+                    </>
+                  )}
+                </button>
+              </div>
+              <textarea
+                rows={4}
+                value={project.description || ""}
+                onChange={(e) =>
+                  handleProjectChange(index, "description", e.target.value)
+                }
+                onFocus={() => {
+                  if (!project.description) {
+                    handleProjectChange(index, "description", "• ");
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (
+                    e.key === "Backspace" &&
+                    project.description &&
+                    project.description.endsWith("• ")
+                  ) {
+                    e.preventDefault();
+                    handleProjectChange(
+                      index,
+                      "description",
+                      project.description.slice(0, -2)
+                    );
+                  }
+                }}
+                placeholder="Start typing (bullet points auto-added)..."
+                className="w-full border border-gray-300 rounded-md p-2 text-sm"
+              />
+              {!project.description && (
+                <p className="text-red-500 text-xs mt-1">
+                  Description is required
+                </p>
+              )}
+              <p className="text-xs text-gray-500 mb-1">
+                Tip: Press <kbd className="bg-gray-100 px-1 rounded">Enter</kbd>{" "}
+                to create bullet points.
+              </p>
+            </div>
+
+            <div className="flex gap-2 absolute bottom-2 right-2">
+              <button
+                className="p-2 rounded-full bg-red-100 text-red-600 hover:bg-red-200 transition-colors flex items-center justify-center"
+                onClick={() => handleRemoveProject(index)}
+                title="Delete Project"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         ))}
 
-        <div className="border-t border-gray-300 my-4"></div>
-
-        <div className="space-y-3">
-          <h3 className="font-medium">Add Project</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm text-gray-500 mb-1">Title</label>
-              <input
-                type="text"
-                className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-300 outline-none"
-                value={newProject.title}
-                onChange={(e) =>
-                  setNewProject({ ...newProject, title: e.target.value })
-                }
-              />
-            </div>
-            <div>
-              <label className="block text-sm text-gray-500 mb-1">
-                Tech Stack
-              </label>
-              <input
-                type="text"
-                className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-300 outline-none"
-                value={newProject.tech}
-                onChange={(e) =>
-                  setNewProject({ ...newProject, tech: e.target.value })
-                }
-              />
-            </div>
-            <div>
-              <label className="block text-sm text-gray-500 mb-1">
-                Start Date
-              </label>
-              <input
-                type="text"
-                className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-300 outline-none"
-                value={newProject.startDate}
-                onChange={(e) =>
-                  setNewProject({ ...newProject, startDate: e.target.value })
-                }
-                placeholder="Month Year"
-              />
-            </div>
-            <div>
-              <label className="block text-sm text-gray-500 mb-1">
-                End Date
-              </label>
-              <input
-                type="text"
-                className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-300 outline-none"
-                value={newProject.endDate}
-                onChange={(e) =>
-                  setNewProject({ ...newProject, endDate: e.target.value })
-                }
-                placeholder="Month Year"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm text-gray-500 mb-1">
-              Add Points
-            </label>
-            <div className="flex gap-2 mb-2">
-              <input
-                type="text"
-                className="flex-1 border border-gray-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-300 outline-none"
-                placeholder="Point about the project"
-                value={newPoint}
-                onChange={(e) => setNewPoint(e.target.value)}
-              />
-              <button
-                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition text-sm"
-                onClick={() => {
-                  if (newPoint) {
-                    setNewProject({
-                      ...newProject,
-                      points: [...newProject.points, newPoint],
-                    });
-                    setNewPoint("");
-                  }
-                }}
-              >
-                Add
-              </button>
-            </div>
-            <ul className="list-disc list-inside text-sm space-y-1">
-              {newProject.points.map((pt, i) => (
-                <li key={i}>{pt}</li>
-              ))}
-            </ul>
-          </div>
-
+        <div className="mt-4">
           <button
             className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition text-sm"
-            onClick={() => {
-              if (newProject.title && newProject.points.length > 0) {
-                handleAddItem("projects", newProject);
-                setNewProject({
-                  title: "",
-                  startDate: "",
-                  endDate: "",
-                  tech: "",
-                  points: [],
-                });
-              }
-            }}
+            onClick={handleAddProject}
+            disabled={
+              manualForm.projects.length > 0 &&
+              (!manualForm.projects[manualForm.projects.length - 1]?.title ||
+                !manualForm.projects[manualForm.projects.length - 1]?.tech ||
+                !manualForm.projects[manualForm.projects.length - 1]
+                  ?.startDate ||
+                !manualForm.projects[manualForm.projects.length - 1]
+                  ?.description)
+            }
           >
-            {editingIndex.project !== null ? "Update Project" : "Add Project"}
+            Add Project
           </button>
         </div>
       </div>
 
       {/* Internships Section */}
-      {/* Internships Section */}
-      {showSections.internships && (
+      {(toggle === "fresher" || showSections.internships) && (
         <div className="space-y-4 mb-6">
-          <h2 className="text-xl font-semibold text-gray-700">Internships</h2>
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-semibold text-gray-700">
+              {toggle === "fresher" ? "Internships" : "Additional Internships"}
+            </h2>
+            {/* {toggle==="fresher" && (
+              <button
+                onClick={() =>
+                  setShowSections((prev) => ({ ...prev, internships: false }))
+                }
+                className="text-gray-500 hover:text-gray-700 text-sm"
+              >
+                Hide Section
+              </button>
+            )} */}
+          </div>
 
           {(manualForm.internships || []).map((internship, index) => (
             <div
               key={index}
-              className="border border-gray-200 rounded-md p-4 relative group"
+              className="border border-gray-200 rounded-md p-4 relative group hover:bg-gray-50 transition-colors"
             >
               <div className="grid grid-cols-2 gap-4 mb-3">
                 <div>
                   <label className="block text-sm text-gray-500 mb-1">
-                    Role
+                    Role*
                   </label>
                   <input
                     type="text"
@@ -1086,11 +1758,17 @@ export default function ResumeForm() {
                     onChange={(e) =>
                       handleInternshipChange(index, "role", e.target.value)
                     }
+                    required
                   />
+                  {!internship.role && (
+                    <p className="text-red-500 text-xs mt-1">
+                      Role is required
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm text-gray-500 mb-1">
-                    Company
+                    Company*
                   </label>
                   <input
                     type="text"
@@ -1099,546 +1777,585 @@ export default function ResumeForm() {
                     onChange={(e) =>
                       handleInternshipChange(index, "company", e.target.value)
                     }
+                    required
                   />
+                  {!internship.company && (
+                    <p className="text-red-500 text-xs mt-1">
+                      Company is required
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm text-gray-500 mb-1">
-                    Start Date
+                    Start Date*
                   </label>
                   <input
-                    type="text"
+                    type="date"
                     className="w-full border border-gray-300 rounded-md p-2 text-sm"
                     value={internship.startDate || ""}
                     onChange={(e) =>
                       handleInternshipChange(index, "startDate", e.target.value)
                     }
-                    placeholder="MM/YYYY"
+                    required
                   />
+                  {!internship.startDate && (
+                    <p className="text-red-500 text-xs mt-1">
+                      Start Date is required
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm text-gray-500 mb-1">
                     End Date
                   </label>
-                  <input
-                    type="text"
-                    className="w-full border border-gray-300 rounded-md p-2 text-sm"
-                    value={internship.endDate || ""}
-                    onChange={(e) =>
-                      handleInternshipChange(index, "endDate", e.target.value)
-                    }
-                    placeholder="MM/YYYY or Present"
-                  />
+                  <div className="flex items-center gap-2">
+                    {internship.endDate === "Present" ? (
+                      <input
+                        type="text"
+                        className="w-full border border-gray-300 rounded-md p-2 text-sm bg-gray-100"
+                        value="Present"
+                        disabled
+                      />
+                    ) : (
+                      <input
+                        type="date"
+                        className="w-full border border-gray-300 rounded-md p-2 text-sm"
+                        value={internship.endDate || ""}
+                        onChange={(e) =>
+                          handleInternshipChange(
+                            index,
+                            "endDate",
+                            e.target.value
+                          )
+                        }
+                      />
+                    )}
+                    <label className="text-sm whitespace-nowrap">
+                      <input
+                        type="checkbox"
+                        className="mr-1"
+                        checked={internship.endDate === "Present"}
+                        onChange={(e) =>
+                          handleInternshipChange(
+                            index,
+                            "endDate",
+                            e.target.checked ? "Present" : ""
+                          )
+                        }
+                      />
+                      Currently working here
+                    </label>
+                  </div>
                 </div>
               </div>
 
               <div className="mb-3">
-                <label className="block text-sm text-gray-500 mb-1">
-                  Responsibilities
-                </label>
-                {internship.description?.map((resp, respIndex) => (
-                  <div key={respIndex} className="flex items-center gap-2 mb-2">
-                    <input
-                      type="text"
-                      className="w-full border border-gray-300 rounded-md p-2 text-sm"
-                      value={resp}
-                      onChange={(e) =>
-                        handleInternshipResponsibilityChange(
-                          index,
-                          respIndex,
-                          e.target.value
-                        )
-                      }
-                    />
-                    <button
-                      className="text-red-500"
-                      onClick={() =>
-                        removeInternshipResponsibility(index, respIndex)
-                      }
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
-                <button
-                  className="text-blue-500 text-sm mt-1"
-                  onClick={() => addInternshipResponsibility(index)}
-                >
-                  + Add Responsibility
-                </button>
+                <div className="flex justify-between items-center mb-1">
+                  <label className="block text-sm text-gray-500">
+                    Responsibilities*
+                  </label>
+                  <button
+                    onClick={async () => {
+                      const enhanced = await enhanceField(
+                        "internship",
+                        internship.description || "",
+                        { role: internship.role, company: internship.company }
+                      );
+                      handleInternshipChange(index, "description", enhanced);
+                    }}
+                    className="bg-blue-100 text-blue-600 px-2 py-1 rounded text-sm hover:bg-blue-200 flex items-center gap-1"
+                    disabled={enhancingField === "internship"}
+                  >
+                    {enhancingField === "internship" ? (
+                      <>
+                        <svg
+                          className="animate-spin h-4 w-4"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          ></circle>
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          ></path>
+                        </svg>
+                        Enhancing...
+                      </>
+                    ) : (
+                      <>
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-4 w-4"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M12.316 3.051a1 1 0 01.633 1.265l-4 12a1 1 0 11-1.898-.632l4-12a1 1 0 011.265-.633zM5.707 6.293a1 1 0 010 1.414L3.414 10l2.293 2.293a1 1 0 11-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0zm8.586 0a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 11-1.414-1.414L16.586 10l-2.293-2.293a1 1 0 010-1.414z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                        Enhance with AI
+                      </>
+                    )}
+                  </button>
+                </div>
+                <textarea
+                  rows={4}
+                  value={internship.description || ""}
+                  onChange={(e) =>
+                    handleInternshipChange(index, "description", e.target.value)
+                  }
+                  onFocus={() => {
+                    if (!internship.description) {
+                      handleInternshipChange(index, "description", "• ");
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (
+                      e.key === "Backspace" &&
+                      internship.description &&
+                      internship.description.endsWith("• ")
+                    ) {
+                      e.preventDefault();
+                      handleInternshipChange(
+                        index,
+                        "description",
+                        internship.description.slice(0, -2)
+                      );
+                    }
+                  }}
+                  placeholder="Start typing (bullet points auto-added)..."
+                  className="w-full border border-gray-300 rounded-md p-2 text-sm"
+                />
+                <p className="text-xs text-gray-500 mb-1">
+                  Tip: Press{" "}
+                  <kbd className="bg-gray-100 px-1 rounded">Enter</kbd> to
+                  create bullet points.
+                </p>
               </div>
 
-              <div className="flex gap-2">
+              <div className="flex gap-2 absolute bottom-2 right-2">
                 <button
-                  className="text-blue-500 text-sm"
-                  onClick={() => handleEditInternship(index)}
+                  className="p-2 rounded-full bg-red-100 text-red-600 hover:bg-red-200 transition-colors flex items-center justify-center"
+                  onClick={() => handleRemoveInternship(index)}
+                  title="Delete Internship"
                 >
-                  Edit
-                </button>
-                <button
-                  className="text-red-500 text-sm"
-                  onClick={() => handleRemoveItem("internships", index)}
-                >
-                  Delete
+                  <Trash2 className="w-4 h-4" />
                 </button>
               </div>
             </div>
           ))}
 
-          {/* Add New Internship Form */}
-          <div className="border-t border-gray-300 pt-4">
-            <h3 className="font-medium mb-3">
-              {editingIndex.internship !== null
-                ? "Edit Internship"
-                : "Add New Internship"}
-            </h3>
-            <div className="grid grid-cols-2 gap-4 mb-3">
-              <div>
-                <label className="block text-sm text-gray-500 mb-1">Role</label>
-                <input
-                  type="text"
-                  className="w-full border border-gray-300 rounded-md p-2 text-sm"
-                  value={newInternship.role}
-                  onChange={(e) =>
-                    setNewInternship({ ...newInternship, role: e.target.value })
-                  }
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-gray-500 mb-1">
-                  Company
-                </label>
-                <input
-                  type="text"
-                  className="w-full border border-gray-300 rounded-md p-2 text-sm"
-                  value={newInternship.company}
-                  onChange={(e) =>
-                    setNewInternship({
-                      ...newInternship,
-                      company: e.target.value,
-                    })
-                  }
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-gray-500 mb-1">
-                  Start Date
-                </label>
-                <input
-                  type="text"
-                  className="w-full border border-gray-300 rounded-md p-2 text-sm"
-                  value={newInternship.startDate}
-                  onChange={(e) =>
-                    setNewInternship({
-                      ...newInternship,
-                      startDate: e.target.value,
-                    })
-                  }
-                  placeholder="MM/YYYY"
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-gray-500 mb-1">
-                  End Date
-                </label>
-                <input
-                  type="text"
-                  className="w-full border border-gray-300 rounded-md p-2 text-sm"
-                  value={newInternship.endDate}
-                  onChange={(e) =>
-                    setNewInternship({
-                      ...newInternship,
-                      endDate: e.target.value,
-                    })
-                  }
-                  placeholder="MM/YYYY or Present"
-                />
-              </div>
-            </div>
-
-            <div className="mb-3">
-              <label className="block text-sm text-gray-500 mb-1">
-                Responsibilities
-              </label>
-              {newInternship.description.map((resp, index) => (
-                <div key={index} className="flex items-center gap-2 mb-2">
-                  <input
-                    type="text"
-                    className="w-full border border-gray-300 rounded-md p-2 text-sm"
-                    value={resp}
-                    onChange={(e) => {
-                      const updated = [...newInternship.description];
-                      updated[index] = e.target.value;
-                      setNewInternship({
-                        ...newInternship,
-                        description: updated,
-                      });
-                    }}
-                  />
-                  {index > 0 && (
-                    <button
-                      className="text-red-500"
-                      onClick={() => {
-                        const updated = [...newInternship.description];
-                        updated.splice(index, 1);
-                        setNewInternship({
-                          ...newInternship,
-                          description: updated,
-                        });
-                      }}
-                    >
-                      ×
-                    </button>
-                  )}
-                </div>
-              ))}
-              <button
-                className="text-blue-500 text-sm mt-1"
-                onClick={() =>
-                  setNewInternship({
-                    ...newInternship,
-                    description: [...newInternship.description, ""],
-                  })
-                }
-              >
-                + Add Responsibility
-              </button>
-            </div>
-
+          <div className="mt-4">
             <button
               className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition text-sm"
               onClick={handleAddInternship}
-              disabled={!newInternship.role || !newInternship.company}
+              disabled={
+                manualForm.internships.length > 0 &&
+                (!manualForm.internships[manualForm.internships.length - 1]
+                  ?.role ||
+                  !manualForm.internships[manualForm.internships.length - 1]
+                    ?.company ||
+                  !manualForm.internships[manualForm.internships.length - 1]
+                    ?.startDate ||
+                  !manualForm.internships[manualForm.internships.length - 1]
+                    ?.description)
+              }
             >
-              {editingIndex.internship !== null
-                ? "Update Internship"
-                : "Add Internship"}
+              Add Internship
             </button>
-            {editingIndex.internship !== null && (
-              <button
-                className="ml-2 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 transition text-sm"
-                onClick={() => {
-                  setEditingIndex({ ...editingIndex, internship: null });
-                  setNewInternship({
-                    jobTitle: "",
-                    company: "",
-                    startDate: "",
-                    endDate: "",
-                    description: [""],
-                  });
-                }}
-              >
-                Cancel
-              </button>
-            )}
           </div>
         </div>
       )}
-
-
-
-  {/* Achievements Section */}
-      {showSections.achievements && (
+      {/* Career Objective (for Freshers) */}
+      {toggle === "fresher" && (
         <div className="space-y-4">
-          <h2 className="text-xl font-semibold text-gray-700">Achievements</h2>
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-semibold text-gray-700">
+              Career Objective
+            </h2>
+            <button
+              onClick={generateCareerObjective}
+              disabled={isGenerating}
+              className={`flex items-center gap-2 px-3 py-1 rounded-md text-sm ${
+                isGenerating
+                  ? "bg-gray-200"
+                  : "bg-green-100 hover:bg-green-200 text-green-800"
+              }`}
+            >
+              {isGenerating ? (
+                <>
+                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                    <circle
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      fill="none"
+                      strokeWidth="4"
+                    />
+                  </svg>
+                  Generating...
+                </>
+              ) : (
+                "✨ Generate with AI"
+              )}
+            </button>
+          </div>
+          <textarea
+            rows={4}
+            className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-300 outline-none"
+            value={manualForm.objective || ""}
+            onChange={(e) => handleFieldChange("objective", e.target.value)}
+            placeholder="Example: 'Detail-oriented Computer Science graduate seeking a software developer role...'"
+          />
+        </div>
+      )}
 
-          {/* Existing Achievements List */}
-          {(manualForm.achievements || []).map((achievement, index) => (
+      {/* Achievements Section */}
+      {showSections.achievements && (
+        <div className="space-y-4 mt-6">
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-semibold text-gray-700">
+              Achievements
+            </h2>
+            <div className="text-sm text-gray-500">
+              {(manualForm.achievements ?? []).length} achievement(s) added
+            </div>
+          </div>
+
+          {(manualForm.achievements || []).map((ach, index) => (
             <div
               key={index}
-              className="border border-gray-200 rounded-md p-4 relative"
+              className="border border-gray-200 rounded-md p-4 relative group hover:bg-gray-50 transition-colors"
             >
-              <div className="flex justify-between">
-                <h3 className="font-medium">{achievement.title || "Achievement Title"}</h3>
+              <div className="grid grid-cols-2 gap-4 mb-3">
                 <div>
-                  <button
-                    className="text-blue-500 text-sm mr-2"
-                    onClick={() => handleEditAchievement(index)}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    className="text-red-500 text-sm"
-                    onClick={() => handleRemoveItem("achievements", index)}
-                  >
-                    Delete
-                  </button>
+                  <label className="block text-sm text-gray-500 mb-1">
+                    Title*
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full border border-gray-300 rounded-md p-2 text-sm"
+                    value={ach.title || ""}
+                    onChange={(e) =>
+                      handleAchievementChange(index, "title", e.target.value)
+                    }
+                    required
+                  />
+                  {!ach.title && (
+                    <p className="text-red-500 text-xs mt-1">
+                      Title is required
+                    </p>
+                  )}
                 </div>
               </div>
 
-              {/* Achievement Description Points */}
-              <ul className="mt-2 list-disc list-inside text-sm text-gray-700 space-y-1">
-                {(achievement.points || []).map((point, i) => (
-                  <li key={i}>{point}</li>
-                ))}
-              </ul>
+              <div className="mb-3">
+                <div className="flex justify-between items-center mb-1">
+                  <label className="block text-sm text-gray-500">
+                    Description*
+                  </label>
+                  <button
+                    onClick={async () => {
+                      const enhanced = await enhanceField(
+                        "achievements",
+                        ach.description || "",
+                        { title: ach.title }
+                      );
+                      handleAchievementChange(index, "description", enhanced);
+                    }}
+                    className="bg-blue-100 text-blue-600 px-2 py-1 rounded text-sm hover:bg-blue-200 flex items-center gap-1"
+                    disabled={enhancingField === "achievements"}
+                  >
+                    {enhancingField === "achievements" ? (
+                      <>
+                        <svg
+                          className="animate-spin h-4 w-4"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          ></circle>
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          ></path>
+                        </svg>
+                        Enhancing...
+                      </>
+                    ) : (
+                      <>
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-4 w-4"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M12.316 3.051a1 1 0 01.633 1.265l-4 12a1 1 0 11-1.898-.632l4-12a1 1 0 011.265-.633zM5.707 6.293a1 1 0 010 1.414L3.414 10l2.293 2.293a1 1 0 11-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0zm8.586 0a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 11-1.414-1.414L16.586 10l-2.293-2.293a1 1 0 010-1.414z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                        Enhance with AI
+                      </>
+                    )}
+                  </button>
+                </div>
+                <textarea
+                  rows={4}
+                  value={ach.description || ""}
+                  onChange={(e) =>
+                    handleAchievementChange(
+                      index,
+                      "description",
+                      e.target.value
+                    )
+                  }
+                  onFocus={() => {
+                    if (!ach.description) {
+                      handleAchievementChange(index, "description", "• ");
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (
+                      e.key === "Backspace" &&
+                      ach.description &&
+                      ach.description.endsWith("• ")
+                    ) {
+                      e.preventDefault();
+                      handleAchievementChange(
+                        index,
+                        "description",
+                        ach.description.slice(0, -2)
+                      );
+                    }
+                  }}
+                  placeholder="Start typing (bullet points auto-added)..."
+                  className="w-full border border-gray-300 rounded-md p-2 text-sm"
+                />
+                <p className="text-xs text-gray-500 mb-1">
+                  Tip: Press{" "}
+                  <kbd className="bg-gray-100 px-1 rounded">Enter</kbd> to
+                  create bullet points.
+                </p>
+              </div>
+
+              <div className="flex gap-2 absolute bottom-2 right-2">
+                <button
+                  className="p-2 rounded-full bg-red-100 text-red-600 hover:bg-red-200 transition-colors flex items-center justify-center"
+                  onClick={() => handleRemoveAchievement(index)}
+                  title="Delete Achievement"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           ))}
 
-          <div className="border-t border-gray-300 my-4"></div>
-
-          {/* Add/Edit Achievement */}
-          <div className="space-y-3">
-            <h3 className="font-medium">
-              {editingIndex.achievement !== null ? "Edit Achievement" : "Add Achievement"}
-            </h3>
-            <div>
-              <label className="block text-sm text-gray-500 mb-1">Title</label>
-              <input
-                type="text"
-                className="w-full border border-gray-300 rounded-md p-2 text-sm"
-                value={newAchievement.title || ""}
-                onChange={(e) =>
-                  setNewAchievement({ ...newAchievement, title: e.target.value })
-                }
-              />
-            </div>
-
-            {/* Points for Achievement */}
-            <div>
-              <label className="block text-sm text-gray-500 mb-1">
-                Points / Highlights
-              </label>
-              <div className="flex gap-2 mb-2">
-                <input
-                  type="text"
-                  className="flex-1 border border-gray-300 rounded-md p-2 text-sm"
-                  placeholder="Add point"
-                  value={newPoint}
-                  onChange={(e) => setNewPoint(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && newPoint) {
-                      setNewAchievement({
-                        ...newAchievement,
-                        points: [...(newAchievement.points || []), newPoint],
-                      });
-                      setNewPoint("");
-                    }
-                  }}
-                />
-                <button
-                  className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm"
-                  onClick={() => {
-                    if (newPoint) {
-                      setNewAchievement({
-                        ...newAchievement,
-                        points: [...(newAchievement.points || []), newPoint],
-                      });
-                      setNewPoint("");
-                    }
-                  }}
-                >
-                  Add Point
-                </button>
-              </div>
-
-              {/* List of Points */}
-              <ul className="list-disc list-inside text-sm space-y-1">
-                {(newAchievement.points || []).map((pt, i) => (
-                  <li key={i} className="flex items-center">
-                    {pt}
-                    <button
-                      className="ml-2 text-red-500 text-xs"
-                      onClick={() => {
-                        const updatedPoints = [...newAchievement.points];
-                        updatedPoints.splice(i, 1);
-                        setNewAchievement({
-                          ...newAchievement,
-                          points: updatedPoints,
-                        });
-                      }}
-                    >
-                      ×
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Add/Update Button */}
-            <div className="flex gap-2">
-              <button
-                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm"
-                onClick={handleAddAchievement}
-                disabled={
-                  !newAchievement.title ||
-                  (newAchievement.points || []).length === 0
-                }
-              >
-                {editingIndex.achievement !== null ? "Update Achievement" : "Add Achievement"}
-              </button>
-              {editingIndex.achievement !== null && (
-                <button
-                  className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 text-sm"
-                  onClick={() => {
-                    setEditingIndex({ ...editingIndex, achievement: null });
-                    setNewAchievement({
-                      title: "",
-                      points: [],
-                    });
-                    setNewPoint("");
-                  }}
-                >
-                  Cancel
-                </button>
-              )}
-            </div>
+          <div className="mt-4">
+            <button
+              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition text-sm"
+              onClick={handleAddAchievement}
+              disabled={
+                manualForm.achievements.length > 0 &&
+                (!manualForm.achievements[manualForm.achievements.length - 1]
+                  ?.title ||
+                  !manualForm.achievements[manualForm.achievements.length - 1]
+                    ?.description)
+              }
+            >
+              Add Achievement
+            </button>
           </div>
         </div>
       )}
-
-
-
-
-     {/* Certifications Section */}
+      {/* Certifications Section */}
       {showSections.certifications && (
         <div className="space-y-4 mb-6">
-          <h2 className="text-xl font-semibold text-gray-700">Certifications</h2>
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-semibold text-gray-700">
+              Certifications
+            </h2>
+            <div className="text-sm text-gray-500">
+              {(manualForm.certifications ?? []).length} certification(s) added
+            </div>
+          </div>
 
           {(manualForm.certifications || []).map((cert, index) => (
             <div
               key={index}
-              className="border border-gray-200 rounded-md p-4 relative group"
+              className="border border-gray-200 rounded-md p-4 relative group hover:bg-gray-50 transition-all duration-200 
+             shadow-sm hover:shadow-md"
             >
               <div className="grid grid-cols-2 gap-4 mb-3">
                 <div>
-                  <label className="block text-sm text-gray-500 mb-1">Name</label>
+                  <label className="block text-sm text-gray-500 mb-1">
+                    Title*
+                  </label>
                   <input
                     type="text"
                     className="w-full border border-gray-300 rounded-md p-2 text-sm"
-                    value={cert.name || ""}
-                    onChange={(e) => handleCertificationChange(index, "name", e.target.value)}
+                    value={cert.title || ""}
+                    onChange={(e) =>
+                      handleCertificationChange(index, "title", e.target.value)
+                    }
+                    required
                   />
+                  {!cert.title && (
+                    <p className="text-red-500 text-xs mt-1">
+                      Title is required
+                    </p>
+                  )}
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-500 mb-1">Issuer</label>
+                  <label className="block text-sm text-gray-500 mb-1">
+                    Issuer*
+                  </label>
                   <input
                     type="text"
                     className="w-full border border-gray-300 rounded-md p-2 text-sm"
                     value={cert.issuer || ""}
-                    onChange={(e) => handleCertificationChange(index, "issuer", e.target.value)}
+                    onChange={(e) =>
+                      handleCertificationChange(index, "issuer", e.target.value)
+                    }
+                    required
                   />
+                  {!cert.issuer && (
+                    <p className="text-red-500 text-xs mt-1">
+                      Issuer is required
+                    </p>
+                  )}
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-500 mb-1">Date</label>
+                  <label className="block text-sm text-gray-500 mb-1">
+                    Date*
+                  </label>
                   <input
-                    type="text"
+                    type="date"
                     className="w-full border border-gray-300 rounded-md p-2 text-sm"
                     value={cert.date || ""}
-                    onChange={(e) => handleCertificationChange(index, "date", e.target.value)}
-                    placeholder="MM/YYYY"
+                    onChange={(e) =>
+                      handleCertificationChange(index, "date", e.target.value)
+                    }
+                    required
                   />
+                  {!cert.date && (
+                    <p className="text-red-500 text-xs mt-1">
+                      Date is required
+                    </p>
+                  )}
                 </div>
               </div>
-              <button
-                className="text-red-500 text-sm"
-                onClick={() => handleRemoveItem("certifications", index)}
-              >
-                Delete
-              </button>
+
+              <div className="flex gap-2 absolute bottom-2 right-2">
+                <button
+                  className="p-2 rounded-full bg-red-100 text-red-600 hover:bg-red-200 transition-colors flex items-center justify-center"
+                  onClick={() => handleRemoveCertification(index)}
+                  title="Delete Certification"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           ))}
 
-          {/* Add New Certification Form */}
-          <div className="border-t border-gray-300 pt-4">
-            <h3 className="font-medium mb-3">Add New Certification</h3>
-            <div className="grid grid-cols-2 gap-4 mb-3">
-              <div>
-                <label className="block text-sm text-gray-500 mb-1">Name</label>
-                <input
-                  type="text"
-                  className="w-full border border-gray-300 rounded-md p-2 text-sm"
-                  value={newCertification.name}
-                  onChange={(e) => setNewCertification({...newCertification, name: e.target.value})}
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-gray-500 mb-1">Issuer</label>
-                <input
-                  type="text"
-                  className="w-full border border-gray-300 rounded-md p-2 text-sm"
-                  value={newCertification.issuer}
-                  onChange={(e) => setNewCertification({...newCertification, issuer: e.target.value})}
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-gray-500 mb-1">Date</label>
-                <input
-                  type="text"
-                  className="w-full border border-gray-300 rounded-md p-2 text-sm"
-                  value={newCertification.date}
-                  onChange={(e) => setNewCertification({...newCertification, date: e.target.value})}
-                  placeholder="MM/YYYY"
-                />
-              </div>
-            </div>
+          <div className="mt-4">
             <button
-              className="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 transition text-sm"
+              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition text-sm"
               onClick={handleAddCertification}
-              disabled={!newCertification.name || !newCertification.issuer}
+              disabled={
+                manualForm.certifications.length > 0 &&
+                (!manualForm.certifications[
+                  manualForm.certifications.length - 1
+                ]?.title ||
+                  !manualForm.certifications[
+                    manualForm.certifications.length - 1
+                  ]?.issuer ||
+                  !manualForm.certifications[
+                    manualForm.certifications.length - 1
+                  ]?.date)
+              }
             >
               Add Certification
             </button>
           </div>
         </div>
       )}
-
-
       {/* new sections */}
-      {/* ===== Section Toggle Buttons ===== */}
-      <div className="flex flex-wrap gap-3 my-4">
-        <button
-          onClick={() =>
-            setShowSections((prev) => ({
-              ...prev,
-              internships: !prev.internships,
-            }))
-          }
-          className={`px-4 py-2 rounded-md text-sm ${
-            showSections.internships
-              ? "bg-blue-600 text-white"
-              : "bg-blue-100 text-blue-800"
-          }`}
-        >
-          {showSections.internships
-            ? "▲ Hide Internships"
-            : "+ Add Internships"}
-        </button>
+      <div className="animate-fade-in">
+        <h2 className="text-xl font-semibold text-gray-700">
+          Additional Sections
+        </h2>
+        <div className="flex flex-wrap gap-3 my-4">
+          {/* Internships Toggle (only for Experienced when not already shown) */}
+          {toggle === "experienced" && !showSections.internships && (
+            <button
+              onClick={() =>
+                setShowSections((prev) => ({
+                  ...prev,
+                  internships: true,
+                }))
+              }
+              className="px-4 py-2 rounded-md text-sm bg-blue-100 text-blue-800 hover:bg-blue-200 transition-all duration-300 transform hover:scale-105"
+            >
+              + Add Internships
+            </button>
+          )}
 
-        <button
-          onClick={() =>
-            setShowSections((prev) => ({
-              ...prev,
-              achievements: !prev.achievements,
-            }))
-          }
-          className={`px-4 py-2 rounded-md text-sm ${
-            showSections.achievements
-              ? "bg-green-600 text-white"
-              : "bg-green-100 text-green-800"
-          }`}
-        >
-          {showSections.achievements
-            ? "▲ Hide Achievements"
-            : "+ Add Achievements"}
-        </button>
+          {/* Achievements Toggle */}
+          <button
+            onClick={() =>
+              setShowSections((prev) => ({
+                ...prev,
+                achievements: !prev.achievements,
+              }))
+            }
+            className={`px-4 py-2 rounded-md text-sm transition-all duration-300 transform hover:scale-105 ${
+              showSections.achievements
+                ? "bg-green-600 text-white hover:bg-green-700"
+                : "bg-green-100 text-green-800 hover:bg-green-200"
+            }`}
+          >
+            {showSections.achievements
+              ? "▲ Hide Achievements"
+              : "+ Add Achievements"}
+          </button>
 
-        <button
-          onClick={() =>
-            setShowSections((prev) => ({
-              ...prev,
-              certifications: !prev.certifications,
-            }))
-          }
-          className={`px-4 py-2 rounded-md text-sm ${
-            showSections.certifications
-              ? "bg-purple-600 text-white"
-              : "bg-purple-100 text-purple-800"
-          }`}
-        >
-          {showSections.certifications
-            ? "▲ Hide Certifications"
-            : "+ Add Certifications"}
-        </button>
+          {/* Certifications Toggle */}
+          <button
+            onClick={() =>
+              setShowSections((prev) => ({
+                ...prev,
+                certifications: !prev.certifications,
+              }))
+            }
+            className={`px-4 py-2 rounded-md text-sm transition-all duration-300 transform hover:scale-105 ${
+              showSections.certifications
+                ? "bg-purple-600 text-white hover:bg-purple-700"
+                : "bg-purple-100 text-purple-800 hover:bg-purple-200"
+            }`}
+          >
+            {showSections.certifications
+              ? "▲ Hide Certifications"
+              : "+ Add Certifications"}
+          </button>
+        </div>
       </div>
     </section>
   );

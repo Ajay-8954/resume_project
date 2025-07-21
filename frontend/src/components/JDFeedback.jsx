@@ -1,8 +1,17 @@
-import React, { useEffect, useState } from "react";
-import { ChevronDown, ChevronUp, Lightbulb, ListChecks, ListX, Sparkles, ThumbsDown, ThumbsUp } from "lucide-react";
+import React, { useState } from "react";
+import {
+  ChevronDown,
+  ChevronUp,
+  Lightbulb,
+  ListChecks,
+  ListX,
+  Sparkles,
+  ThumbsDown,
+  ThumbsUp,
+} from "lucide-react";
 import useResumeStore from "../store/useResumeStore";
 
-export default function JDFeedback() {
+export default function JDFeedback({ setCurrentStep, setCompletedSteps }) {
   const {
     jdTexts,
     setJdTexts,
@@ -42,64 +51,92 @@ export default function JDFeedback() {
   };
 
   const handleGenerateFeedback = async () => {
-    if (!jdTexts || !manualForm) return alert("Job Description or Resume is missing.");
-    setLoading(true);
-    try {
-      const res = await fetch("http://127.0.0.1:5000/generate_feedback_from_jd", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ jd: jdTexts, resume_text: manualForm }),
-      });
+  if (!jdTexts || !manualForm) {
+    alert("Job Description or Resume is missing.");
+    console.warn("Missing inputs:", { jdTexts, manualForm });
+    return;
+  }
 
-      const data = await res.json();
-      if (res.ok) {
-        setFeedback(data.feedback || "");
-        setQuestionss(data.questions || []);
-        setJdAnalysis({
-          ats_score: data.ats_score || 0,
-          strengths: data.strengths || [],
-          weaknesses: data.weaknesses || [],
-          matching_skills: data.matching_skills || [],
-          missing_skills: data.missing_skills || [],
-          improvement_tips: data.improvement_tips || [],
-        });
-      } else {
-        setFeedback("Something went wrong!");
-      }
-    } catch {
-      setFeedback("Error generating feedback.");
-    } finally {
-      setLoading(false);
+  setLoading(true);
+
+  try {
+    console.log("🔁 Sending resume_text and jd_text to /analyze_resume");
+
+    const formData = new URLSearchParams();
+    formData.append("resume_text", manualForm);
+    formData.append("jd_text", jdTexts);
+
+    const analysisRes = await fetch("http://127.0.0.1:5000/analyze_resume", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: formData.toString(),
+    });
+
+    const analysis = await analysisRes.json();
+    console.log("✅ Analysis Response:", analysis);
+
+    if (!analysisRes.ok) {
+      console.error("❌ Analysis Error:", analysis.error);
+      throw new Error(analysis.error || "Resume analysis failed.");
     }
-  };
 
-  const handleFixResume = async () => {
-    try {
-      const formattedAnswers = {};
-      questionss.forEach((q, i) => {
-        if (answerss[i]) {
-          formattedAnswers[`Q${i + 1}`] = q;
-          formattedAnswers[`A${i + 1}`] = answerss[i];
-        }
-      });
+    const parsedResume = analysis.parsed_resume_text;
+    const score = analysis.overall_score;
 
-      const res = await fetch("http://127.0.0.1:5000/api/fix-resume", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ jd: jdTexts, answerss: formattedAnswers, resume: manualForm }),
-      });
+    console.log("🔁 Sending parsed resume to /get_keyword_gaps");
+    const gapRes = await fetch("http://127.0.0.1:5000/get_keyword_gaps", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        jd_text: jdTexts,
+        resume_text: parsedResume,
+      }),
+    });
 
-      const data = await res.json();
-      if (res.ok && data.fixed_resume) {
-        setManualForm(data.fixed_resume);
-      } else {
-        alert(data.error || "Failed to update resume.");
-      }
-    } catch (error) {
-      alert("Error fixing resume.");
-      console.error(error);
+    const gaps = await gapRes.json();
+    console.log("✅ Gaps Response:", gaps);
+
+    if (!gapRes.ok) {
+      console.error("❌ Gap Fetch Error:", gaps.error);
+      throw new Error(gaps.error || "Keyword gap fetch failed.");
     }
-  };
+
+    // Update global state
+    setFeedback(analysis.summary || "");
+
+    setJdAnalysis({
+      ats_score: score || 0,
+      strengths:
+        analysis.analysis_breakdown?.content?.details
+          ?.filter((d) => d.passed)
+          .map((d) => d.comment) || [],
+      weaknesses:
+        analysis.analysis_breakdown?.content?.details
+          ?.filter((d) => !d.passed)
+          .map((d) => d.comment) || [],
+      matching_skills: gaps.present_keywords || [],
+      missing_skills: gaps.missing_keywords || [],
+      improvement_tips:
+        analysis.analysis_breakdown?.style?.details
+          ?.filter((d) => !d.passed)
+          .map((d) => d.comment) || [],
+    });
+
+    console.log("🌟 JD Analysis & Feedback Updated");
+
+    setCurrentStep?.(3);
+    setCompletedSteps?.((prev) => [...new Set([...prev, 3])]);
+  } catch (error) {
+    console.error("🔥 Analysis Error:", error.message);
+    setFeedback("⚠️ Error generating analysis. Try again.");
+  } finally {
+    setLoading(false);
+  }
+};
+
+ 
 
   const sections = [
     { title: "Strengths", icon: ThumbsUp, color: "green", data: strengths },
@@ -111,7 +148,6 @@ export default function JDFeedback() {
 
   return (
     <div className="space-y-6">
-      
       {/* JD Text Input */}
       <div className="bg-white border border-gray-200 p-4 rounded-lg shadow-sm space-y-3">
         <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
@@ -153,7 +189,7 @@ export default function JDFeedback() {
         </div>
       )}
 
-      {/* Expandable Sections with Animation */}
+      {/* Expandable Sections */}
       {sections.map(({ title, icon: Icon, color, data }) => {
         const key = title.toLowerCase().replace(/\s/g, "_");
         if (!data?.length) return null;
@@ -168,7 +204,6 @@ export default function JDFeedback() {
               </span>
               {openSections[key] ? <ChevronUp /> : <ChevronDown />}
             </button>
-
             <div
               className={`transition-all duration-500 ease-in-out overflow-hidden ${
                 openSections[key] ? "max-h-96 opacity-100" : "max-h-0 opacity-0"

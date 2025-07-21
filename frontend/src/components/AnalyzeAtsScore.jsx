@@ -1,671 +1,16 @@
-// import { useState } from "react";
-// import { UploadCloud, GaugeCircle, CheckCircle, XCircle, Loader2, ChevronDown, ChevronUp, FileText, Palette, Target, PenTool, BookOpen, Wand2, Download, RefreshCw, Clipboard, BrainCircuit } from "lucide-react";
-// import useResumeStore from "../store/useResumeStore";
-
-// const AnalysisCategory = ({ categoryKey, data }) => {
-//   const [isOpen, setIsOpen] = useState(true);
-//   const styles = {
-//     tailoring: { icon: Target, color: "blue", title: "Tailoring" },
-//     format: { icon: FileText, color: "purple", title: "Format" },
-//     content: { icon: BookOpen, color: "green", title: "Content" },
-//     sections: { icon: PenTool, color: "yellow", title: "Sections" },
-//     style: { icon: Palette, color: "red", title: "Style" }
-//   };
-  
-//   const { icon: Icon, color, title } = styles[categoryKey];
-//   const scoreColor = data.score >= 80 ? 'text-green-600' : data.score >= 60 ? 'text-yellow-600' : 'text-red-600';
-//   const borderColor = `border-${color}-200`;
-//   const textColor = `text-${color}-800`;
-//   const hoverBgColor = `hover:bg-${color}-50`;
-//   const iconColor = `text-${color}-500`;
-
-//   return (
-//     <div className={`mb-4 border ${borderColor} rounded-md shadow-sm bg-white`}>
-//       <button 
-//         onClick={() => setIsOpen(!isOpen)} 
-//         className={`w-full flex justify-between items-center px-4 py-3 font-semibold text-left ${textColor} ${hoverBgColor} rounded-t-md`}
-//       >
-//         <span className="flex items-center gap-3">
-//           <Icon className={`w-6 h-6 ${iconColor}`} />
-//           <span>{title}</span>
-//         </span>
-//         <div className="flex items-center gap-4">
-//           <span className={`text-xl font-bold ${scoreColor}`}>
-//             {data.score}<span className="text-gray-500">/100</span>
-//           </span>
-//           {isOpen ? <ChevronUp /> : <ChevronDown />}
-//         </div>
-//       </button>
-//       {isOpen && (
-//         <div className="p-4 border-t border-gray-200">
-//           <p className="mb-4 text-sm text-gray-600 italic">"{data.feedback}"</p>
-//           <ul className="space-y-2">
-//             {data.details.map((item, i) => (
-//               <li key={i} className="flex items-start gap-3 text-sm">
-//                 {item.passed ? (
-//                   <CheckCircle className="w-5 h-5 text-green-500 mt-0.5"/>
-//                 ) : (
-//                   <XCircle className="w-5 h-5 text-red-500 mt-0.5"/>
-//                 )}
-//                 <div>
-//                   <span className="font-semibold">{item.criterion}:</span>
-//                   <span className="ml-1">{item.comment}</span>
-//                 </div>
-//               </li>
-//             ))}
-//           </ul>
-//         </div>
-//       )}
-//     </div>
-//   );
-// };
-
-// const LoadingView = () => (
-//   <div className="flex flex-col items-center justify-center min-h-[80vh] text-purple-600">
-//     <Loader2 className="w-12 h-12 animate-spin mb-4" />
-//     <p className="text-xl font-medium">Analyzing...</p>
-//   </div>
-// );
-
-// const InitialUploadView = ({ resumeFile, setResumeFile, handleInitialAnalysis, error, reset }) => (
-//   <div className="flex items-center justify-center min-h-[90vh]">
-//     <div className="max-w-2xl w-full bg-white rounded-xl shadow-2xl p-8 space-y-6">
-//       <h2 className="text-3xl font-bold text-gray-800 text-center">ATS Resume Checker</h2>
-//       <p className="text-gray-500 text-center">Get a detailed analysis of your resume and optimize it against any job description.</p>
-      
-//       <div>
-//         <label className="font-semibold text-gray-700 flex items-center gap-2 mb-2">
-//           <UploadCloud className="text-purple-500"/>1. Upload Your Resume
-//         </label>
-//         <label className="flex items-center justify-center p-4 bg-gray-50 rounded-lg cursor-pointer border-2 border-dashed border-gray-300 hover:bg-gray-100">
-//           <span className="text-gray-600 font-medium">
-//             {resumeFile ? `✅ ${resumeFile.name}` : "Click to select file (.docx )"}
-//           </span>
-//           <input 
-//             type="file" 
-//             accept=".pdf,.docx" 
-//             className="hidden" 
-//             onChange={(e) => setResumeFile(e.target.files[0])} ////event handler
-//           />
-//         </label>
-//       </div>
-      
-//       {error && (
-//         <p className="text-sm text-red-600 text-center bg-red-50 p-2 rounded-md">
-//           ❌ {error}
-//         </p>
-//       )}
-      
-//       <button 
-//         onClick={handleInitialAnalysis} 
-//         disabled={!resumeFile} 
-//         className="w-full flex items-center justify-center gap-3 py-3 bg-purple-600 text-white text-lg font-semibold rounded-md hover:bg-purple-700 disabled:bg-gray-400"
-//       >
-//         <BrainCircuit /> Get Initial Score
-//       </button>
-      
-//       <button 
-//         onClick={reset} 
-//         className="w-full text-center text-sm text-gray-500 hover:text-gray-700 mt-2"
-//       >
-//         Start Over
-//       </button>
-//     </div>
-//   </div>
-// );
-
-// const AnalysisView = ({ isInitial, analysis, keywordGaps, jdText, setJdText, handleMatchAnalysis, handleGenerateQuestions, error }) => {
-//   const score = analysis?.overall_score;
-//   const scoreColor = score >= 80 ? 'text-green-600' : score >= 60 ? 'text-yellow-600' : 'text-red-600';
-  
-//   return (
-//     <div className="max-w-4xl mx-auto space-y-6">
-//       <div className="bg-white rounded-xl shadow-lg p-6">
-//         <h3 className="text-2xl font-bold text-gray-800 mb-4 text-center">
-//           {isInitial ? "Initial Analysis Report" : "Resume vs. Job Description Match"}
-//         </h3>
-        
-//         <div className="text-center mb-6">
-//           <p className="text-sm text-gray-500">Overall Score</p>
-//           <div className={`text-6xl font-bold ${scoreColor}`}>
-//             {score}<span className="text-3xl text-gray-400">/100</span>
-//           </div>
-//           <p className="mt-2 text-gray-700 font-medium max-w-md mx-auto">
-//             {analysis?.summary}
-//           </p>
-//         </div>
-        
-//         {!isInitial && keywordGaps && (
-//           <div className="mb-6 border-t pt-4">
-//             <h4 className="font-semibold text-lg mb-2 text-gray-800">Keyword Gap Analysis</h4>
-//             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-//               <div className="bg-red-50 p-3 rounded-md border border-red-200">
-//                 <h5 className="font-bold text-red-700 mb-2">Missing Keywords</h5>
-//                 <div className="flex flex-wrap gap-2">
-//                   {keywordGaps.missing_keywords?.map(kw => (
-//                     <span key={kw} className="bg-red-200 text-red-800 text-xs font-medium px-2 py-1 rounded-full">
-//                       {kw}
-//                     </span>
-//                   ))}
-//                 </div>
-//                 {keywordGaps.missing_qualifications?.length > 0 && (
-//                   <>
-//                     <h5 className="font-bold text-red-700 mt-3 mb-2">Missing Qualifications</h5>
-//                     <ul className="list-disc pl-5 text-sm text-red-700">
-//                       {keywordGaps.missing_qualifications.map((q, i) => (
-//                         <li key={i}>{q}</li>
-//                       ))}
-//                     </ul>
-//                   </>
-//                 )}
-//               </div>
-//               <div className="bg-green-50 p-3 rounded-md border border-green-200">
-//                 <h5 className="font-bold text-green-700 mb-2">Matched Keywords</h5>
-//                 <div className="flex flex-wrap gap-2">
-//                   {keywordGaps.present_keywords?.map(kw => (
-//                     <span key={kw} className="bg-green-200 text-green-800 text-xs font-medium px-2 py-1 rounded-full">
-//                       {kw}
-//                     </span>
-//                   ))}
-//                 </div>
-//                 {keywordGaps.matched_qualifications?.length > 0 && (
-//                   <>
-//                     <h5 className="font-bold text-green-700 mt-3 mb-2">Matched Qualifications</h5>
-//                     <ul className="list-disc pl-5 text-sm text-green-700">
-//                       {keywordGaps.matched_qualifications.map((q, i) => (
-//                         <li key={i}>{q}</li>
-//                       ))}
-//                     </ul>
-//                   </>
-//                 )}
-//               </div>
-//             </div>
-//           </div>
-//         )}
-
-//         <div className="max-h-[500px] overflow-y-auto pr-2">
-//           {analysis && Object.entries(analysis.analysis_breakdown).map(([key, value]) => (
-//             <AnalysisCategory key={key} categoryKey={key} data={value} />
-//           ))}
-//         </div>
-//       </div>
-
-//       {isInitial ? (
-//         <div className="bg-white rounded-xl shadow-lg p-6 space-y-4">
-//           <h3 className="text-2xl font-bold text-gray-800 text-center">Next: Match with a Job</h3>
-//           <label htmlFor="jd" className="font-semibold text-gray-700 flex items-center gap-2">
-//             <Clipboard/>2. Paste Job Description
-//           </label>
-//           <textarea 
-//             id="jd" 
-//             rows="6" //////Sets the visible height of the textarea to 6 lines tall
-//             value={jdText} 
-//             onChange={(e) => setJdText(e.target.value)} 
-//             className="w-full p-3 border rounded-md focus:ring-2 focus:ring-purple-500" 
-//             placeholder="Paste the job description here..."
-//           ></textarea>
-          
-//           {error && (
-//             <p className="text-sm text-red-600 text-center bg-red-50 p-2 rounded-md">
-//               ❌ {error}
-//             </p>
-//           )}
-          
-//           <button 
-//             onClick={handleMatchAnalysis} 
-//             disabled={!jdText.trim()} 
-//             className="w-full flex items-center justify-center gap-3 py-3 bg-purple-600 text-white text-lg font-semibold rounded-md hover:bg-purple-700 disabled:bg-gray-400"
-//           >
-//             Analyze Match
-//           </button>
-//         </div>
-//       ) : (
-//         <div className="bg-white rounded-xl shadow-lg p-6 text-center">
-//           <h3 className="text-2xl font-bold text-gray-800 mb-4">Ready to Improve Your Score?</h3>
-//           <p className="text-gray-600 mb-4">Let's generate questions to fill the gaps we found.</p>
-//           <button 
-//             onClick={handleGenerateQuestions} 
-//             className="flex items-center justify-center mx-auto gap-3 py-3 px-6 bg-green-600 text-white text-lg font-semibold rounded-md hover:bg-green-700"
-//           >
-//             <Wand2/> Start Optimization
-//           </button>
-//         </div>
-//       )}
-//     </div>
-//   );
-// };
-
-// const OptimizerView = ({ questions, answers, setAnswer, handleOptimize, error }) => (
-//   <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-lg p-8 space-y-6">
-//     <h2 className="text-3xl font-bold text-gray-800 text-center">Fill the Gaps</h2>
-//     <p className="text-center text-gray-600">
-//       Your answers will be used to add powerful, metric-driven bullet points to your resume.
-//     </p>
-    
-//     <div className="space-y-4 pt-4 border-t">
-//       {questions.map((q, i) => (
-//         <div key={i}>
-//           <label className="text-md font-medium text-gray-700">
-//             {i + 1}. {q}
-//           </label>
-//           <input 
-//             type="text" 
-//             value={answers[q] || ''}
-//             onChange={(e) => setAnswer(q, e.target.value)} 
-//             className="w-full mt-1 p-2 border rounded-md focus:ring-1 focus:ring-purple-500" 
-//             placeholder="Your specific, quantifiable answer..."
-//           />
-//         </div>
-//       ))}
-//     </div>
-    
-//     {error && (
-//       <p className="text-sm text-red-600 text-center bg-red-50 p-2 rounded-md">
-//         ❌ {error}
-//       </p>
-//     )}
-    
-//     <button 
-//       onClick={handleOptimize} 
-//       className="w-full flex items-center justify-center gap-3 py-3 bg-green-600 text-white text-lg font-semibold rounded-md hover:bg-green-700"
-//     >
-//       <Wand2/> Create My Optimized Resume
-//     </button>
-//   </div>
-// );
-
-// const ResultView = ({ optimizedResumeFile, downloadFile, handleRecheck, analysis, error }) => {
-//   const [isChecking, setIsChecking] = useState(false);
-//   const [showResults, setShowResults] = useState(false);
-  
-//   const handleCheckAndShow = async () => {
-//     setIsChecking(true);
-//     try {
-//       const success = await handleRecheck();
-//       if (success) {
-//         setShowResults(true);
-//       }
-//     } finally {
-//       setIsChecking(false);
-//     }
-//   };
-
-//   return (
-//     <div className="flex items-center justify-center min-h-[90vh]">
-//       <div className="max-w-lg w-full bg-white p-8 rounded-xl shadow-2xl text-center space-y-4">
-//         {showResults ? (
-//           <>
-//             <CheckCircle className="w-16 h-16 text-green-500 mx-auto"/>
-//             <h2 className="text-3xl font-bold text-gray-800">Optimization Results</h2>
-//             <div className="text-center">
-//               <p className="text-gray-600 mb-2">Your new ATS score:</p>
-//               <div className={`text-5xl font-bold ${
-//                 analysis?.overall_score >= 80 ? 'text-green-600' : 
-//                 analysis?.overall_score >= 60 ? 'text-yellow-600' : 'text-red-600'
-//               }`}>
-//                 {analysis?.overall_score}<span className="text-2xl text-gray-400">/100</span>
-//               </div>
-//               {analysis?.summary && (
-//                 <p className="mt-3 text-gray-600 italic">"{analysis.summary}"</p>
-//               )}
-//             </div>
-//             <button 
-//               onClick={downloadFile} 
-//               className="w-full flex items-center justify-center gap-2 py-3 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700"
-//             >
-//               <Download/> Download Optimized Resume
-//             </button>
-//           </>
-//         ) : (
-//           <>
-//             <Wand2 className="w-16 h-16 text-purple-500 mx-auto"/>
-//             <h2 className="text-3xl font-bold text-gray-800">Optimization Complete</h2>
-//             <p className="text-gray-600 mb-6">
-//               Let's check how much your score improved.
-//             </p>
-//             {error && (
-//               <p className="text-sm text-red-600 text-center bg-red-50 p-2 rounded-md mb-4">
-//                 ❌ {error}
-//               </p>
-//             )}
-//             <button 
-//               onClick={handleCheckAndShow}
-//               disabled={isChecking}
-//               className="w-full flex items-center justify-center gap-2 py-3 bg-purple-600 text-white font-semibold rounded-md hover:bg-purple-700 disabled:bg-purple-400"
-//             >
-//               {isChecking ? (
-//                 <>
-//                   <Loader2 className="animate-spin"/> Checking...
-//                 </>
-//               ) : (
-//                 <>
-//                   <RefreshCw/> Check Improved Score
-//                 </>
-//               )}
-//             </button>
-//           </>
-//         )}
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default function AnalyzeAtsScore() {
-//   const { 
-//     currentStep, 
-//     isLoading, 
-//     setIsLoading,
-//     resumeFile,
-//     setResumeFile,
-//     jdText,
-//     setJdText,
-//     setAnalysis,
-//     setFileId,
-//     setParsedResumeText,
-//     setCurrentStep,
-//     analysis,
-//     setQuestions,
-//     parsedResumeText,
-//     keywordGaps,
-//     setKeywordGaps,
-//     questions,
-//     answers,
-//     setAnswer,
-//     fileId,
-//     setOptimizedResumeFile,
-//     optimizedResumeFile,
-//     reset,
-//     addScoreToHistory
-//   } = useResumeStore();
-
-//   const [error, setError] = useState(null);
-
-//   const handleInitialAnalysis = async () => {
-//     if (!resumeFile) {
-//       setError("Please upload your resume first.");
-//       return;
-//     }
-    
-//     setIsLoading(true);
-//     setError(null);
-    
-//     const formData = new FormData();
-//     formData.append("resume_file", resumeFile);
-    
-//     try {
-//       const res = await fetch("http://localhost:5000/analyze_resume", {
-//         method: "POST",
-//         body: formData
-//       });
-      
-//       const data = await res.json();/////convert responce from server into jon format
-      
-//       if (res.ok) {
-//         setAnalysis(data);
-//         setFileId(data.file_id);
-//         setParsedResumeText(data.parsed_resume_text);
-//         addScoreToHistory(data.overall_score);
-//         setCurrentStep('SHOW_INITIAL_ANALYSIS');
-//       } else {
-//         setError(data.error || "Analysis failed.");
-//       }
-//     } catch (err) {
-//       setError("Network error.");
-//     }
-    
-//     setIsLoading(false);
-//   };
-
-//   const handleMatchAnalysis = async () => {
-//     if (!jdText.trim()) {
-//       setError("Please paste the job description.");
-//       return;
-//     }
-    
-//     setIsLoading(true);
-//     setError(null);
-    
-//     const formData = new FormData();
-//     formData.append("resume_file", resumeFile);
-//     formData.append("jd_text", jdText);
-    
-//     try {
-//       const [analysisRes, gapsRes] = await Promise.all([
-//         fetch("http://localhost:5000/analyze_resume", {
-//           method: "POST",
-//           body: formData
-//         }),
-//         fetch("http://localhost:5000/get_keyword_gaps", {
-//           method: 'POST',
-//           headers: { 'Content-Type': 'application/json' },
-//           body: JSON.stringify({ 
-//             jd_text: jdText, 
-//             resume_text: parsedResumeText 
-//           })
-//         })
-//       ]);
-      
-//       const analysisData = await analysisRes.json();
-//       const gapsData = await gapsRes.json();
-
-//       if (analysisRes.ok) {
-//         setAnalysis(analysisData);
-//         addScoreToHistory(analysisData.overall_score);
-//       } else {
-//         setError(analysisData.error || "Analysis failed.");
-//       }
-
-//       if (gapsRes.ok) {
-//         setKeywordGaps(gapsData);
-//       }
-      
-//       if (analysisRes.ok) {
-//         setCurrentStep('SHOW_MATCH_ANALYSIS');
-//       }
-//     } catch (err) {
-//       setError("Network error.");
-//     }
-    
-//     setIsLoading(false);
-//   };
-  
-//   const handleGenerateQuestions = async () => {
-//     setIsLoading(true);
-    
-//     try {
-//       const res = await fetch("http://localhost:5000/generate_questions", {
-//         method: "POST",
-//         headers: { 'Content-Type': 'application/json' },
-//         body: JSON.stringify({ 
-//           jd_text: jdText, 
-//           resume_text: parsedResumeText 
-//         })
-//       });
-      
-//       const data = await res.json();
-      
-//       if (res.ok) {
-//         setQuestions(data.questions || []);
-//         setCurrentStep('OPTIMIZING');
-//       } else {
-//         setError(data.error || "Failed to generate questions.");
-//       }
-//     } catch (err) {
-//       setError("Network error.");
-//     }
-    
-//     setIsLoading(false);
-//   };
-
-//   const handleOptimize = async () => {
-//     setIsLoading(true);
-    
-//     try {
-//       const res = await fetch("http://localhost:5000/optimize_resume", {
-//         method: "POST",
-//         headers: { 'Content-Type': 'application/json' },
-//         body: JSON.stringify({ 
-//           jd_text: jdText, 
-//           answers, 
-//           file_id: fileId 
-//         })
-//       });
-      
-//       if (res.ok) {
-//         const blob = await res.blob();
-//         const file = new File([blob], 'Optimized_Resume.docx', { 
-//           type: res.headers.get('content-type') 
-//         });
-        
-//         setOptimizedResumeFile(file);
-//         setCurrentStep('RESULT');
-//       } else {
-//         const data = await res.json();
-//         setError(data.error || "Optimization failed.");
-//       }
-//     } catch(err) {
-//       setError("Network error.");
-//     }
-    
-//     setIsLoading(false);
-//   };
-
-//   const handleRecheck = async () => {
-//     setError(null);
-  
-//     const formData = new FormData();
-//     formData.append("resume_file", optimizedResumeFile);
-//     formData.append("jd_text", jdText);
-  
-//     try {
-//       const analysisRes = await fetch("http://localhost:5000/analyze_resume", {
-//         method: "POST",
-//         body: formData,
-//       });
-  
-//       const analysisData = await analysisRes.json();
-//       if (!analysisRes.ok) {
-//         setError(analysisData.error || "Re-check failed during analysis.");
-//         return false;
-//       }
-  
-//       setAnalysis(analysisData);
-//       setFileId(analysisData.file_id);
-//       setParsedResumeText(analysisData.parsed_resume_text);
-//       addScoreToHistory(analysisData.overall_score);
-  
-//       const newResumeText = analysisData.parsed_resume_text;
-//       const gapsRes = await fetch("http://localhost:5000/get_keyword_gaps", {
-//         method: 'POST',
-//         headers: { 'Content-Type': 'application/json' },
-//         body: JSON.stringify({
-//           jd_text: jdText,
-//           resume_text: newResumeText,
-//         }),
-//       });
-      
-//       const gapsData = await gapsRes.json();
-//       if (gapsRes.ok) {
-//         setKeywordGaps(gapsData);
-//       } else {
-//         console.error("Failed to update keyword gaps:", gapsData.error);
-//       }
-  
-//       setResumeFile(optimizedResumeFile); 
-//       return true;
-  
-//     } catch (err) {
-//       setError("Network error during re-check.");
-//       return false;
-//     }
-//   };
-
-//   const downloadFile = () => {
-//     const url = URL.createObjectURL(optimizedResumeFile);
-//     const link = document.createElement('a');
-//     link.href = url;
-//     link.download = optimizedResumeFile.name;
-//     document.body.appendChild(link);
-//     link.click();
-//     document.body.removeChild(link);
-//     URL.revokeObjectURL(url);
-//   };
-
-//   const renderStep = () => {
-//     if (isLoading) return <LoadingView />;
-    
-//     switch (currentStep) {
-//       case 'INITIAL_UPLOAD':
-//         return (
-//           <InitialUploadView 
-//             resumeFile={resumeFile}
-//             setResumeFile={setResumeFile}
-//             handleInitialAnalysis={handleInitialAnalysis}
-//             error={error}
-//             reset={reset}
-//           />
-//         );
-//       case 'SHOW_INITIAL_ANALYSIS':
-//         return (
-//           <AnalysisView 
-//             isInitial={true}
-//             analysis={analysis}
-//             jdText={jdText}
-//             setJdText={setJdText}
-//             handleMatchAnalysis={handleMatchAnalysis}
-//             error={error}
-//           />
-//         );
-//       case 'SHOW_MATCH_ANALYSIS':
-//         return (
-//           <AnalysisView 
-//             isInitial={false}
-//             analysis={analysis}
-//             keywordGaps={keywordGaps}
-//             handleGenerateQuestions={handleGenerateQuestions}
-//           />
-//         );
-//       case 'OPTIMIZING':
-//         return (
-//           <OptimizerView 
-//             questions={questions}
-//             answers={answers}
-//             setAnswer={setAnswer}
-//             handleOptimize={handleOptimize}
-//             error={error}
-//           />
-//         );
-//       case 'RESULT':
-//         return (
-//           <ResultView 
-//             optimizedResumeFile={optimizedResumeFile}
-//             downloadFile={downloadFile}
-//             handleRecheck={handleRecheck}
-//             analysis={analysis}
-//             error={error}
-//           />
-//         );
-//       default:
-//         return <InitialUploadView />;
-//     }
-//   };
-
-//   return <div className="min-h-screen bg-gray-50 p-4">{renderStep()}</div>;
-// }
-
-
-
-
-
 import { useState } from "react";
+// ADD THESE IMPORTS
+import { useNavigate } from "react-router-dom"; 
+import { Building } from "lucide-react"; 
+
 import { 
     UploadCloud, GaugeCircle, CheckCircle, XCircle, Loader2, ChevronDown, 
     ChevronUp, FileText, Palette, Target, PenTool, BookOpen, Wand2, 
-    Download, RefreshCw, Clipboard, BrainCircuit, ArrowUp, BarChart as BarChartIcon 
+    Download, RefreshCw, Clipboard, BrainCircuit, ArrowUp, BarChart as BarChartIcon, Trash2
 } from "lucide-react";
 import useResumeStore from "../store/useResumeStore";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 // --- UI/UX ENHANCEMENT: Static color mapping for Tailwind CSS ---
 // This prevents issues with dynamic class name purging in production builds.
@@ -745,38 +90,131 @@ const LoadingView = () => (
 );
 
 
-const InitialUploadView = ({ resumeFile, setResumeFile, handleInitialAnalysis, error, reset, jdText, setJdText }) => (
-    <div className="flex items-center justify-center min-h-[90vh]">
-        <div className="max-w-2xl w-full bg-white rounded-xl shadow-2xl p-8 space-y-6">
-            <h2 className="text-3xl font-bold text-gray-800 text-center">ATS Resume Checker</h2>
-            <p className="text-gray-500 text-center">Upload your resume and job description to get started.</p>
-            <div>
-                <label className="font-semibold text-gray-700 flex items-center gap-2 mb-2">
-                    <UploadCloud className="text-purple-500"/>1. Upload Your Resume
-                </label>
-                <label className="flex items-center justify-center p-4 bg-gray-50 rounded-lg cursor-pointer border-2 border-dashed border-gray-300 hover:bg-gray-100 transition-colors">
-                    <span className="text-gray-600 font-medium">
-                        {resumeFile ? `✅ ${resumeFile.name}` : "Click to select file (.docx or .pdf)"}
-                    </span>
-                    <input type="file" accept=".pdf,.docx" className="hidden" onChange={(e) => setResumeFile(e.target.files[0])} />
-                </label>
-            </div>
-            <div>
-                <label htmlFor="jd" className="font-semibold text-gray-700 flex items-center gap-2 mb-2">
-                    <Clipboard/>2. Paste Job Description
-                </label>
-                <textarea id="jd" rows="6" value={jdText} onChange={(e) => setJdText(e.target.value)} className="w-full p-3 border rounded-md focus:ring-2 focus:ring-purple-500 transition-shadow" placeholder="Paste the job description here..."></textarea>
-            </div>
-            {error && <p className="text-sm text-red-600 text-center bg-red-50 p-2 rounded-md">❌ {error}</p>}
-            <button onClick={handleInitialAnalysis} disabled={!resumeFile || !jdText.trim()} className="w-full flex items-center justify-center gap-3 py-3 bg-purple-600 text-white text-lg font-semibold rounded-md hover:bg-purple-700 disabled:bg-gray-400 transition-all transform hover:scale-105 disabled:transform-none">
-                <BrainCircuit /> Analyze Resume
-            </button>
-            <button onClick={reset} className="w-full text-center text-sm text-gray-500 hover:text-gray-700 mt-2">Start Over</button>
-        </div>
-    </div>
-);
+const InitialUploadView = ({ resumeFile, setResumeFile, handleInitialAnalysis, error, reset, jdText, setJdText }) => {
+    const [isDragging, setIsDragging] = useState(false);
 
-// --- UI/UX ENHANCEMENT 2a: Keyword Analysis Chart ---
+    const handleDrag = (e) => { e.preventDefault(); e.stopPropagation(); };
+    const handleDragIn = (e) => { handleDrag(e); if (e.dataTransfer.items?.length > 0) setIsDragging(true); };
+    const handleDragOut = (e) => { handleDrag(e); setIsDragging(false); };
+    const handleDrop = (e) => {
+        handleDrag(e);
+        setIsDragging(false);
+        if (e.dataTransfer.files?.length > 0) {
+            setResumeFile(e.dataTransfer.files[0]);
+            e.dataTransfer.clearData();
+        }
+    };
+
+    const Feature = ({ icon: Icon, title, description, delay }) => (
+        <motion.div 
+            className="flex items-start gap-4"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay }}
+        >
+            <div className="flex-shrink-0 h-12 w-12 bg-white/10 rounded-lg flex items-center justify-center">
+                <Icon className="w-6 h-6 text-purple-300" />
+            </div>
+            <div>
+                <h3 className="font-semibold text-white">{title}</h3>
+                <p className="text-purple-200 text-sm">{description}</p>
+            </div>
+        </motion.div>
+    );
+
+    return (
+        <div className="min-h-screen w-full flex flex-col lg:flex-row bg-white">
+            <div className="w-full lg:w-1/2 bg-gradient-to-br from-purple-600 to-indigo-700 p-8 lg:p-12 flex flex-col justify-center text-white">
+                <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+                    <h1 className="text-4xl lg:text-5xl font-bold">Beat the Bots.</h1>
+                    <h2 className="text-4xl lg:text-5xl font-bold text-purple-300">Land the Interview.</h2>
+                    <p className="mt-4 text-lg text-purple-200">Our AI-powered checker analyzes your resume against any job description, giving you the insights you need to get noticed.</p>
+                </motion.div>
+                
+                <div className="mt-12 space-y-8">
+                    <Feature icon={Target} title="Targeted Keyword Analysis" description="Find out exactly which keywords are missing from your resume." delay={0.2} />
+                    <Feature icon={BarChartIcon} title="Instant Match Score" description="Get a score from 0-100 to see how well you match the job." delay={0.4} />
+                    <Feature icon={Wand2} title="AI-Powered Optimization" description="Receive actionable advice and let our AI help you improve your resume." delay={0.6} />
+                </div>
+            </div>
+
+            <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
+                <motion.div 
+                    className="w-full max-w-md space-y-6"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.5, delay: 0.2 }}
+                >
+                    <h3 className="text-2xl font-bold text-slate-800 text-center">Start Your Analysis</h3>
+                   
+                    <h1 className="text-[10px] font-bold text-red-500 text-center">Note: Only upload a .docx file if you want to fix your resume.</h1>
+                    <br></br>
+                    
+                    <div>
+                        <label className="font-semibold text-slate-700 flex items-center gap-2 mb-2">
+                            <span>1. Upload Your Resume</span>
+                        </label>
+                        <label 
+                            htmlFor="resume-upload"
+                            className={`relative flex flex-col items-center justify-center p-6 bg-slate-50 rounded-lg cursor-pointer border-2 border-dashed  transition-all duration-300
+                                ${isDragging ? 'border-purple-500 bg-purple-50' : 'border-slate-300 hover:border-slate-400'}
+                                ${resumeFile ? 'border-green-500 bg-green-50' : ''}`}
+                            onDragEnter={handleDragIn} onDragLeave={handleDragOut} onDragOver={handleDrag} onDrop={handleDrop}
+                        >
+                            <AnimatePresence mode="wait">
+                            {resumeFile ? (
+                                <motion.div key="uploaded" initial={{scale:0.8, opacity: 0}} animate={{scale:1, opacity: 1}} className="flex flex-col items-center text-center">
+                                    <CheckCircle className="w-10 h-10 text-green-600 mb-2"/>
+                                    <p className="text-green-800 font-semibold">{resumeFile.name}</p>
+                                    <button onClick={(e) => { e.preventDefault(); setResumeFile(null); }} className="mt-2 text-sm text-red-500 hover:underline flex items-center gap-1 z-10">
+                                        <Trash2 size={14}/> Change file
+                                    </button>
+                                </motion.div>
+                            ) : (
+                                <motion.div key="waiting" className="flex flex-col items-center text-center pointer-events-none">
+                                    <UploadCloud className={`w-10 h-10 mb-2 transition-colors ${isDragging ? 'text-purple-500' : 'text-green-700'}`}/>
+                                    <span className={`font-medium transition-colors ${isDragging ? 'text-purple-600' : 'text-slate-600'}`}>
+                                        Drag & drop or click to upload
+                                    </span>
+                                </motion.div>
+                            )}
+                            </AnimatePresence>
+                            <input id="resume-upload" type="file" accept=".pdf,.docx" className="hidden" onChange={(e) => setResumeFile(e.target.files[0])} />
+                        </label>
+                    </div>
+                    
+                    <div>
+                        <label htmlFor="jd" className="font-semibold text-slate-700 flex items-center gap-2 mb-2">
+                            <span>2. Paste Job Description</span>
+                        </label>
+                        <textarea 
+                            id="jd" rows="6" value={jdText} onChange={(e) => setJdText(e.target.value)} 
+                            className="w-full p-3 border border-slate-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all shadow-sm" 
+                            placeholder="Paste the job description here..."
+                        />
+                    </div>
+
+                    {error && <p className="text-sm text-red-600 text-center bg-red-100 p-3 rounded-md border border-red-200">❌ {error}</p>}
+                
+                    <div className="flex flex-col items-center gap-3 pt-2">
+                        <button 
+                            onClick={handleInitialAnalysis} disabled={!resumeFile || !jdText.trim()} 
+                            className="w-full flex items-center justify-center gap-2 py-3 bg-purple-600 text-white text-md font-semibold rounded-md hover:bg-purple-700 disabled:bg-slate-400 disabled:cursor-not-allowed transition-all transform hover:scale-105"
+                        >
+                            <BrainCircuit size={18} />
+                            <span>Analyze My Resume</span>
+                        </button>
+                        <button onClick={reset} className="text-sm text-slate-500 hover:text-slate-700 transition-colors flex items-center gap-1">
+                            <RefreshCw size={14} /> Start Over
+                        </button>
+                    </div>
+                </motion.div>
+            </div>
+        </div>
+    );
+};
+
+
 const KeywordChart = ({ keywordGaps }) => {
     if (!keywordGaps) return null;
     const data = [{
@@ -805,13 +243,11 @@ const KeywordChart = ({ keywordGaps }) => {
 const AnalysisView = ({ analysis, keywordGaps, handleGenerateQuestions, error }) => {
     const score = analysis?.overall_score;
     const scoreColor = score >= 80 ? 'text-green-600' : score >= 60 ? 'text-yellow-600' : 'text-red-600';
-    // --- UI/UX ENHANCEMENT 2b: Local loading state for smoother flow ---
     const [isGenerating, setIsGenerating] = useState(false);
 
     const handleStartOptimization = async () => {
         setIsGenerating(true);
         await handleGenerateQuestions();
-        // The component will unmount on success, so no need to set state back to false
     };
 
     return (
@@ -892,9 +328,6 @@ const OptimizerView = ({ questions, answers, setAnswer, handleOptimize, error })
     </div>
 );
 
-
-
-// --- UI/UX ENHANCEMENT 4: Impactful Results Display ---
 const ScoreImprovement = ({ oldScore, newScore }) => {
     if (oldScore === null || newScore === null || oldScore === newScore) return null;
     const improvement = newScore - oldScore;
@@ -912,14 +345,10 @@ const ScoreImprovement = ({ oldScore, newScore }) => {
             <div className="flex flex-col items-center">
                 <span className={`text-xs ${improvementColor}`}>New Score</span>
                 <span className={`text-5xl font-bold ${improvementColor}`}>{newScore}</span>
-                </div>
+            </div>
         </div>
     );
-    
 }
-
-
-
 
 const EnhancementsSummary = ({ answers }) => {
     const enhancements = [
@@ -946,7 +375,11 @@ const EnhancementsSummary = ({ answers }) => {
     );
 };
 
-const ResultView = ({ downloadFile, handleRecheck, analysis, scoreHistory, answers, error }) => {
+
+// ==========================================================
+// === REPLACE YOUR EXISTING ResultView WITH THIS VERSION ===
+// ==========================================================
+const ResultView = ({ downloadFile, handleRecheck, analysis, scoreHistory, answers, error, handleNavigateToBuilder }) => {
     const [isChecking, setIsChecking] = useState(false);
     const [showResults, setShowResults] = useState(false);
     
@@ -975,12 +408,31 @@ const ResultView = ({ downloadFile, handleRecheck, analysis, scoreHistory, answe
                         <ScoreImprovement oldScore={oldScore} newScore={newScore} />
                         {analysis?.summary && <p className="mt-3 text-gray-600 italic">"{analysis.summary}"</p>}
                         <EnhancementsSummary answers={answers} />
-                        <button onClick={downloadFile} className="w-full flex items-center justify-center gap-2 py-3 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 transition-all transform hover:scale-105">
-                            <Download/> Download Optimized Resume
-                        </button>
+                        
+                        {/* --- THIS IS THE MODIFIED PART --- */}
+                        <div className="flex flex-col sm:flex-row gap-4 pt-4">
+                            <button 
+                                onClick={downloadFile} 
+                                className="w-full flex items-center justify-center gap-2 py-3 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 transition-all transform hover:scale-105"
+                            >
+                                <Download/> Download Optimized Resume
+                            </button>
+
+
+                            {/* --- ADDED THIS NEW BUTTON --- */}
+                            <button 
+                                onClick={handleNavigateToBuilder}
+                                className="w-full flex items-center justify-center gap-2 py-3 bg-green-600 text-white font-semibold rounded-md hover:bg-green-700 transition-all transform hover:scale-105"
+                            >
+                                <Building/> Design in Builder
+                            </button>
+                        </div>
+
+
+                        {/* --- END OF MODIFICATION --- */}
+
                     </motion.div>
                 ) : (
-                    // --- UI/UX ENHANCEMENT 3: Enhanced Recheck Screen ---
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-gradient-to-br from-white to-purple-50 p-8 rounded-lg">
                         <Wand2 className="w-16 h-16 text-purple-500 mx-auto"/>
                         <h2 className="text-3xl font-bold text-gray-800 mt-4">Almost There!</h2>
@@ -996,15 +448,27 @@ const ResultView = ({ downloadFile, handleRecheck, analysis, scoreHistory, answe
     );
 };
 
+
+// ======================================================================
+// === REPLACE YOUR EXISTING AnalyzeAtsScore EXPORT WITH THIS VERSION ===
+// ======================================================================
 export default function AnalyzeAtsScore() {
     const {
         currentStep, isLoading, setIsLoading, resumeFile, setResumeFile, jdText, setJdText, 
         setAnalysis, setFileId, setParsedResumeText, setCurrentStep, analysis, setQuestions, 
         parsedResumeText, keywordGaps, setKeywordGaps, questions, answers, setAnswer, 
-        fileId, setOptimizedResumeFile, optimizedResumeFile, reset, addScoreToHistory, scoreHistory
+        fileId, setOptimizedResumeFile, optimizedResumeFile, reset, addScoreToHistory, scoreHistory,
+        setDataToBuild // GET THE NEW ACTION FROM YOUR STORE
     } = useResumeStore();
+    
     const [error, setError] = useState(null);
+    const navigate = useNavigate(); // GET THE NAVIGATE FUNCTION
 
+    //
+    // NO CHANGES TO ANY OF THESE FUNCTIONS:
+    // handleInitialAnalysis, handleGenerateQuestions, handleOptimize,
+    // handleRecheck, downloadFile
+    //
     const handleInitialAnalysis = async () => {
         if (!resumeFile) { setError("Please upload your resume first."); return; }
         if (!jdText || jdText.trim() === "") { setError("Please paste the job description."); return; }
@@ -1016,7 +480,6 @@ export default function AnalyzeAtsScore() {
         formData.append("jd_text", jdText);
 
         try {
-            // Fetch analysis first to get parsed text
             const analysisRes = await fetch("http://localhost:5000/analyze_resume", { method: "POST", body: formData });
             const analysisData = await analysisRes.json();
 
@@ -1027,7 +490,6 @@ export default function AnalyzeAtsScore() {
                 setParsedResumeText(newParsedText);
                 addScoreToHistory(analysisData.overall_score);
 
-                // Now fetch gaps with the correct parsed text
                 const gapsRes = await fetch("http://localhost:5000/get_keyword_gaps", {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -1049,7 +511,6 @@ export default function AnalyzeAtsScore() {
     };
 
     const handleGenerateQuestions = async () => {
-        // NOTE: Deliberately not using global isLoading for a smoother UX on the button
         setError(null);
         try {
             const res = await fetch("http://localhost:5000/generate_questions", {
@@ -1063,11 +524,10 @@ export default function AnalyzeAtsScore() {
                 setCurrentStep('OPTIMIZING');
             } else {
                 setError(data.error || "Failed to generate questions.");
-                throw new Error(data.error); // throw to be caught by the caller
+                throw new Error(data.error);
             }
         } catch (err) {
             setError(err.message || "Network error during question generation.");
-            // Re-throw so the local loading state can be reset
             throw err;
         }
     };
@@ -1076,11 +536,23 @@ export default function AnalyzeAtsScore() {
         setIsLoading(true);
         setError(null);
         try {
+            const lastScore = scoreHistory[scoreHistory.length - 1];
+            if (lastScore === undefined) {
+                setError("Cannot optimize without an initial score. Please start over.");
+                setIsLoading(false);
+                return;
+            }
             const res = await fetch("http://localhost:5000/optimize_resume", {
                 method: "POST",
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ jd_text: jdText, answers, file_id: fileId })
+                body: JSON.stringify({ 
+                    jd_text: jdText, 
+                    answers, 
+                    file_id: fileId,
+                    old_score: lastScore
+                })
             });
+            
             if (res.ok) {
                 const blob = await res.blob();
                 const file = new File([blob], 'Optimized_Resume.docx', { type: res.headers.get('content-type') });
@@ -1102,6 +574,11 @@ export default function AnalyzeAtsScore() {
         formData.append("resume_file", optimizedResumeFile);
         formData.append("jd_text", jdText);
 
+        const lastScore = scoreHistory[scoreHistory.length - 1];
+        if (lastScore !== undefined) {
+            formData.append("old_score", lastScore);
+        }  
+
         try {
             const res = await fetch("http://localhost:5000/analyze_resume", { method: "POST", body: formData });
             const data = await res.json();
@@ -1111,7 +588,7 @@ export default function AnalyzeAtsScore() {
             }
             setAnalysis(data);
             addScoreToHistory(data.overall_score);
-            setResumeFile(optimizedResumeFile); // Update the main resume file for future actions
+            setResumeFile(optimizedResumeFile);
             return true;
         } catch (err) {
             setError("Network error during re-check.");
@@ -1120,6 +597,7 @@ export default function AnalyzeAtsScore() {
     };
     
     const downloadFile = () => {
+        if (!optimizedResumeFile) return;
         const url = URL.createObjectURL(optimizedResumeFile);
         const link = document.createElement('a');
         link.href = url;
@@ -1129,6 +607,94 @@ export default function AnalyzeAtsScore() {
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
     };
+
+    // --- ADD THIS NEW FUNCTION ---
+// const handleNavigateToBuilder = async () => {
+//     // The optimizedResumeFile is ALREADY in our store from the previous step.
+//     if (!optimizedResumeFile) {
+//         setError("Optimized resume file not found. Please try again.");
+//         return;
+//     }
+
+//     setIsLoading(true);
+//     setError(null);
+
+//     // We use FormData because we are now sending a FILE.
+//     const formData = new FormData();
+//     formData.append("optimized_resume_file", optimizedResumeFile);
+
+//     try {
+//       // We call the NEW, simpler endpoint.
+//       const res = await fetch("http://localhost:5000/parse_optimized_resume", {
+//         method: "POST",
+//         body: formData, // Send the form data with the file
+//       });
+
+//       const data = await res.json();
+//       if (!res.ok) {
+//         throw new Error(data.error || "Could not prepare data for builder.");
+//       }
+
+//       // Set the data in the global store
+//       setDataToBuild(data);
+//       // Navigate to the builder page
+//       navigate('/builder/google');
+
+//     } catch (err) {
+//       setError(err.message);
+//     } finally {
+//       setIsLoading(false);
+//     }
+// };
+
+
+
+    // --- THIS IS THE CORRECTED FUNCTION ---
+    const handleNavigateToBuilder = async () => {
+        // We use the FINAL optimized file from the app state.
+        // This is the SAME file used by the "Download" button.
+        if (!optimizedResumeFile) {
+            setError("The optimized resume file is not available. Please try the process again.");
+            return;
+        }
+
+        setIsLoading(true);
+        setError(null);
+
+        const formData = new FormData();
+        // The key here MUST match what the backend expects: 'optimized_resume_file'
+        formData.append("optimized_resume_file", optimizedResumeFile);
+
+        try {
+          // We call the NEW, correct endpoint
+          const res = await fetch("http://localhost:5000/parse_final_resume_to_json", {
+            method: "POST",
+            body: formData, // Send the form data containing the final .docx file
+          });
+    
+          const data = await res.json();
+          if (!res.ok) {
+            throw new Error(data.error || "Could not prepare data for the builder.");
+          }
+    
+          // Set the data in the global store
+          setDataToBuild(data);
+          // Navigate to the builder page
+          navigate('/builder/google');
+    
+        } catch (err) {
+          setError(err.message);
+          setIsLoading(false); // Make sure to stop loading on error
+        }
+        // No need for a `finally` block if we only want to stop loading on error or success navigation
+      };
+
+
+
+
+
+
+
 
     const renderStep = () => {
         if (isLoading) return <LoadingView />;
@@ -1140,11 +706,23 @@ export default function AnalyzeAtsScore() {
             case 'OPTIMIZING':
                 return <OptimizerView questions={questions} answers={answers} setAnswer={setAnswer} handleOptimize={handleOptimize} error={error} />;
             case 'RESULT':
-                return <ResultView downloadFile={downloadFile} handleRecheck={handleRecheck} analysis={analysis} scoreHistory={scoreHistory} answers={answers} error={error} />;
+                // --- THIS IS THE MODIFIED PART ---
+                return (
+                    <ResultView 
+                        downloadFile={downloadFile} 
+                        handleRecheck={handleRecheck} 
+                        analysis={analysis} 
+                        scoreHistory={scoreHistory} 
+                        answers={answers} 
+                        error={error} 
+                        handleNavigateToBuilder={handleNavigateToBuilder} // Pass the new handler here
+                    />
+                );
+                // --- END OF MODIFICATION ---
             default:
                 return <InitialUploadView resumeFile={resumeFile} setResumeFile={setResumeFile} handleInitialAnalysis={handleInitialAnalysis} error={error} reset={reset} jdText={jdText} setJdText={setJdText} />;
         }
     };
 
-    return <div className="min-h-screen bg-gray-50 p-4">{renderStep()}</div>;
+    return <div className="min-h-screen bg-gray-50">{renderStep()}</div>;
 }

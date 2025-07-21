@@ -5,30 +5,109 @@ import Meta from "./templates/Meta";
 
 // Dummy data
 const dummyData = {
-  Name: "Ajay Kumar",
-  Email: "ajay@example.com",
-  phoneNo: "+91 9876543210",
-  linkedinProfileUrl: "https://linkedin.com/in/ajaykumar",
-  githubProfileUrl: "https://github.com/ajaykumar",
-  location: "Delhi, India",
-  summary:
-    "Full-stack developer with 2+ years of experience in building scalable web applications and APIs. Proficient in MERN stack and cloud deployment.",
-
-  Skills:
-    "JavaScript, React, Node.js, Express.js, MongoDB, Git, Docker, HTML, CSS",
-
-  workExp: `• Software Developer at ABC Corp (2022 - Present)\n  Worked on building scalable REST APIs using Node.js and Express.\n• Frontend Intern at XYZ Pvt Ltd (2021 - 2022)\n  Developed interactive UI components using React and Tailwind.`,
-
-  Projects: `• Resume Builder Application using React & Express.\n• E-commerce Website with Admin Panel and Payment Integration.\n• Real-time Chat Application with Socket.io and Node.js.`,
-
-  Education: "B.Tech in Computer Science, NIT Delhi (2017 - 2021)",
-
-  Achievements: `• Top 5 Finalist - National Hackathon 2023.\n• Solved 300+ DSA problems on LeetCode.\n• Google Cloud Certified Associate.\n• Published research paper on Machine Learning at IEEE Conference.`,
-
-  Languages: "English, Hindi",
-
-  Interests: "Coding, Blogging, Playing Chess",
-};
+  "Name": "John A. Smith",
+  "jobTitle": "Senior Software Engineer",
+  "email": "john.smith@example.com",
+  "phone": "(555) 123-4567",
+  "location": "San Francisco, CA",
+  "linkedin": "https://linkedin.com/in/johnsmith",
+  "github": "https://github.com/johnsmith",
+  "summary": "Results-driven software engineer with 5+ years of experience in full-stack development. Specialized in JavaScript frameworks and cloud architecture. Passionate about building scalable web applications and mentoring junior developers.",
+  "experience": [
+    {
+      "jobTitle": "Senior Software Engineer",
+      "company": "TechCorp Inc.",
+      "startDate": "Jan 2020",
+      "endDate": "Present",
+      "description": "Lead a team of 5 developers to build and maintain the company's flagship SaaS product. Implemented microservices architecture that improved system performance by 40%."
+    },
+    {
+      "jobTitle": "Software Developer",
+      "company": "Digital Solutions LLC",
+      "startDate": "Jun 2017",
+      "endDate": "Dec 2019",
+      "description": "Developed and maintained web applications using React and Node.js. Reduced page load times by 30% through performance optimization."
+    }
+  ],
+  "internship": [
+    {
+      "jobTitle": "Software Engineering Intern",
+      "company": "Innovatech",
+      "startDate": "May 2016",
+      "endDate": "Aug 2016",
+      "description": "Assisted in developing internal tools and participated in code reviews. Gained experience with Agile methodologies."
+    }
+  ],
+  "education": [
+    {
+      "degree": "B.S. in Computer Science",
+      "school": "University of California, Berkeley",
+      "startDate": "2013",
+      "endDate": "2017"
+    }
+  ],
+  "skills": [
+    "JavaScript",
+    "React",
+    "Node.js",
+    "Python",
+    "AWS",
+    "Docker",
+    "SQL",
+    "Git"
+  ],
+  "languages": [
+    "English (Fluent)",
+    "Spanish (Intermediate)"
+  ],
+  "interests": [
+    "Open Source Contributions",
+    "Machine Learning",
+    "Hiking",
+    "Photography"
+  ],
+  "achievements": [
+    {
+      "title": "Employee of the Year 2021",
+      "points": [
+        "Recognized for outstanding contributions to the company's core product",
+        "Led initiative that reduced customer support tickets by 25%"
+      ]
+    },
+    {
+      "title": "Hackathon Winner",
+      "points": [
+        "Won first place in company-wide hackathon for developing a productivity tool",
+        "Solution was later integrated into the main product"
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "title": "E-commerce Platform",
+      "startDate": "Mar 2021",
+      "endDate": "Aug 2021",
+      "tech": "React, Node.js, MongoDB, Stripe API",
+      "points": [
+        "Built a full-featured online store with cart functionality and payment processing",
+        "Implemented JWT authentication for secure user accounts",
+        "Optimized database queries reducing load times by 35%"
+      ]
+    },
+    {
+      "title": "Task Management App",
+      "startDate": "Jan 2020",
+      "endDate": "Feb 2020",
+      "tech": "Vue.js, Firebase",
+      "points": [
+        "Developed a collaborative task management application with real-time updates",
+        "Integrated Google Calendar API for deadline tracking",
+        "Open-sourced project with 500+ GitHub stars"
+      ]
+    }
+  ]
+}
+;
 
 const templates = [
   {
@@ -79,8 +158,8 @@ export default function TemplateSelection() {
                 <p className="text-xs text-gray-500">{description}</p>
               </div>
 
-              <div className="h-[260px] overflow-hidden bg-white rounded-md border border-gray-200 shadow-inner p-2">
-                <div className="transform scale-[0.22] origin-top-left pointer-events-none w-[900px]">
+              <div className="h-[170px] overflow-hidden bg-white rounded-md border border-gray-200 shadow-inner p-2">
+                <div className="transform scale-[0.21] origin-top-left pointer-events-none w-[650px]">
                   <PreviewComponent data={dummyData} />
                 </div>
               </div>

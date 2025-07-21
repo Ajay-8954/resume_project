@@ -1,36 +1,346 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from "react";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import { Download, Edit2, Trash2, PlusCircle, Check, X } from "lucide-react";
+
+// Import your template components
+import Google from "./templates/Google";
+import Meta from "./templates/Meta";
+import Microsoft from "./templates/Microsoft";
 
 const Dashboard = () => {
+  const [editingResumeId, setEditingResumeId] = useState(null);
+  const [newTitle, setNewTitle] = useState("");
+  const [toast, setToast] = useState({ message: "", type: "", visible: false });
   const [user, setUser] = useState(null);
+  const previewRef = useRef();
+  const [resumes, setResumes] = useState([]);
+  const [loadingResumes, setLoadingResumes] = useState(true);
   const navigate = useNavigate();
 
-  const fetchUserData = async () => {
+  const handleEditTitle = (resumeId, currentTitle) => {
+    console.log(`Editing title for resume ID: ${resumeId}`);
+    setEditingResumeId(resumeId);
+    setNewTitle(currentTitle || "Untitled Resume");
+  };
+
+  const handleSaveTitle = async (resumeId) => {
+    console.log(`Saving title for resume ID: ${resumeId}`, { newTitle });
     try {
-      const response = await axios.get('http://localhost:5000/api/auth/validate', {
-        withCredentials: true
-      });
-      setUser(response.data.user);
+      await axios.put(
+        `http://localhost:5000/update-title/${resumeId}`,
+        { title: newTitle },
+        { withCredentials: true }
+      );
+      setResumes(
+        resumes.map((resume) =>
+          resume._id === resumeId ? { ...resume, title: newTitle } : resume
+        )
+      );
+      setToast({ message: "Title updated successfully", type: "success", visible: true });
+      setTimeout(() => setToast({ message: "", type: "", visible: false }), 3000);
+      setEditingResumeId(null);
+      setNewTitle("");
     } catch (err) {
-      navigate('/login');
+      console.error("Failed to update title:", err.response?.data || err.message);
+      setToast({ message: "Failed to update title", type: "error", visible: true });
+      setTimeout(() => setToast({ message: "", type: "", visible: false }), 3000);
     }
   };
 
+  const handleCancelEdit = () => {
+    console.log("Cancelled title edit");
+    setEditingResumeId(null);
+    setNewTitle("");
+  };
 
+  const renderPreview = (templateId, data) => {
+    const props = { data };
+    switch (templateId) {
+      case "google":
+        return <Google {...props} />;
+      case "meta":
+        return <Meta {...props} />;
+      case "microsoft":
+        return <Microsoft {...props} />;
+      default:
+        return (
+          <div className="text-center text-gray-500 py-10 px-4">
+            {templateId ? `Template "${templateId}" not supported` : "Template not specified"}
+          </div>
+        );
+    }
+  };
+
+  const fetchUserData = async () => {
+    try {
+      const response = await axios.get("http://localhost:5000/api/auth/validate", {
+        withCredentials: true,
+      });
+      setUser(response.data.user);
+    } catch (err) {
+      console.error("Failed to validate user:", err);
+      navigate("/login");
+    }
+  };
+
+  const fetchResumes = async () => {
+    setLoadingResumes(true);
+    try {
+      const response = await axios.get("http://localhost:5000/my-resumes", {
+        withCredentials: true,
+      });
+      setResumes(response.data.resumes || []);
+    } catch (err) {
+      console.error("Failed to fetch resumes:", err);
+      setResumes([]);
+    } finally {
+      setLoadingResumes(false);
+    }
+  };
+
+  const handleEditNavigation = (resumeId, templateId) => {
+    console.log(`Action: Navigating to edit resume ID: ${resumeId}`);
+    const resumeToEdit = resumes.find((r) => r._id === resumeId);
+    if (resumeToEdit) {
+      navigate(`/builder/${templateId}`, {
+        state: {
+          content: resumeToEdit.content,
+          resumeId: resumeId,
+        },
+      });
+    } else {
+      console.error(`Resume with ID ${resumeId} not found in state.`);
+      alert("Could not find resume details to edit.");
+    }
+  };
+
+  const handleDownload = (resumeId, resumeTitle, templateId) => {
+    console.log(`Action: Download resume ID: ${resumeId}`);
+    alert(`Downloading resume "${resumeTitle}" (functionality not yet implemented).`);
+  };
+
+  const handleCreateNew = () => {
+    console.log("Action: Navigate to create new resume.");
+    navigate("/resume-builder");
+  };
+
+  const handleSelect = (resume) => {
+    navigate(`/builder/${resume.template}`, {
+      state: {
+        content: resume.content,
+        resumeId: resume._id,
+      },
+    });
+  };
+
+  const handleDelete = async (resumeId) => {
+    if (!window.confirm("Are you sure you want to delete this resume?")) return;
+
+    try {
+      await axios.delete(`http://localhost:5000/delete_resume/${resumeId}`, {
+        withCredentials: true,
+      });
+      alert("Resume deleted!");
+      setResumes(resumes.filter((r) => r._id !== resumeId));
+    } catch (err) {
+      console.error("Delete failed:", err);
+      alert("Failed to delete resume");
+    }
+  };
 
   useEffect(() => {
     fetchUserData();
+    fetchResumes();
   }, []);
 
-  if (!user) return <div>Loading...</div>;
+  if (!user) {
+    return (
+      <div className="flex flex-col justify-center items-center min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 text-gray-700 font-sans">
+        <div className="animate-pulse">
+          <PlusCircle size={64} className="text-blue-400 mb-4" />
+        </div>
+        <h2 className="text-2xl font-semibold mb-2">Welcome!</h2>
+        <p className="text-lg">Authenticating and loading your resumes...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <div className="p-6">
-        <h2 className="text-2xl font-semibold">Welcome, {user.username}!</h2>
-        <p className="text-gray-600 mt-2">Email: {user.email}</p>
-        {/* Add your dashboard content here */}
+    <div className="min-h-screen bg-gray-50 p-6 md:p-10">
+      <div className="max-w-7xl mx-auto">
+        {/* Toast Notification */}
+        {toast.visible && (
+          <div
+            className={`fixed top-4 right-4 px-4 py-2 rounded-md text-white text-sm font-medium shadow-lg transition-all duration-300 ${
+              toast.type === "success" ? "bg-green-500" : "bg-red-500"
+            }`}
+          >
+            {toast.message}
+          </div>
+        )}
+
+        {/* Header Section */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 md:mb-12 border-b-2 border-gray-200 pb-6">
+          <div className="mb-6 md:mb-0">
+            <h1 className="text-4xl font-extrabold mb-1 text-gray-900">
+              Hello, {user.username}!
+            </h1>
+            <p className="text-xl text-gray-600">
+              Manage your professional profiles here.
+            </p>
+          </div>
+          <button
+            onClick={handleCreateNew}
+            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white font-bold rounded-lg shadow-lg hover:from-green-600 hover:to-green-700 transition-all duration-300 ease-in-out focus:outline-none focus:ring-4 focus:ring-green-400 focus:ring-opacity-75 transform hover:-translate-y-1"
+            aria-label="Create New Resume"
+          >
+            <PlusCircle size={24} />
+            <span className="text-lg">Create New Resume</span>
+          </button>
+        </div>
+
+        {/* Your Resumes Section */}
+        <section>
+          <h2 className="text-3xl font-bold mb-6 text-gray-800">Your Resumes</h2>
+
+          {loadingResumes ? (
+            <div className="flex flex-col items-center justify-center py-20 space-y-4">
+              <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-xl font-medium text-gray-600">
+                Loading your resumes...
+              </p>
+            </div>
+          ) : resumes.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 bg-white rounded-xl shadow-lg border border-gray-200">
+              <p className="text-2xl font-semibold text-gray-700 mb-4">
+                Ready to make an impression?
+              </p>
+              <p className="text-lg text-gray-500 mb-6 text-center max-w-md">
+                You haven't created any resumes yet. Let's get started with your
+                first one!
+              </p>
+              <button
+                onClick={handleCreateNew}
+                className="flex items-center gap-2 px-7 py-3.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold rounded-lg shadow-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-300 ease-in-out focus:outline-none focus:ring-4 focus:ring-blue-400 focus:ring-opacity-75 transform hover:-translate-y-1"
+                aria-label="Create Your First Resume"
+              >
+                <PlusCircle size={24} />
+                <span className="text-lg">Create Your First Resume</span>
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+              {resumes.map((resume) => {
+                const previewScale = 0.35;
+                const previewHeight = 256;
+                const aspectRatio = 0.79;
+                const previewWidth = previewHeight * aspectRatio;
+
+                return (
+                  <div
+                    key={resume._id}
+                    className="bg-white rounded-xl shadow-md overflow-hidden transition-all duration-300 ease-in-out hover:shadow-xl hover:-translate-y-1 border border-gray-200 flex flex-col"
+                    style={{ width: "100%", maxWidth: "400px" }}
+                  >
+                    {/* Resume Preview Area */}
+                    <div
+                      className="relative overflow-hidden bg-white cursor-pointer"
+                      style={{
+                        width: `${previewWidth}px`,
+                        height: `${previewHeight}px`,
+                        margin: "0 auto",
+                      }}
+                      onClick={() => handleSelect(resume)}
+                    >
+                      <div
+                        className="absolute top-0 left-0"
+                        style={{
+                          width: `${previewWidth / previewScale}px`,
+                          height: `${previewHeight / previewScale}px`,
+                          transform: `scale(${previewScale})`,
+                          transformOrigin: "top left",
+                        }}
+                      >
+                        {renderPreview(resume.template, resume.content)}
+                      </div>
+                    </div>
+
+                    {/* Title and Actions */}
+                    <div className="p-4 flex flex-col gap-3 bg-gray-50 border-t border-gray-200">
+                      {editingResumeId === resume._id ? (
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={newTitle}
+                            onChange={(e) => setNewTitle(e.target.value)}
+                            onClick={(e) => e.stopPropagation()}
+                            className="border border-gray-300 px-2 py-1 text-sm rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+                            autoFocus
+                          />
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSaveTitle(resume._id);
+                            }}
+                            className="p-1.5 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors duration-200"
+                            title="Save Title"
+                          >
+                            <Check size={16} />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCancelEdit();
+                            }}
+                            className="p-1.5 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors duration-200"
+                            title="Cancel Edit"
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-lg font-semibold text-gray-800 truncate">
+                            {resume.title || "Untitled Resume"}
+                          </h3>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEditTitle(resume._id, resume.title);
+                            }}
+                            className="p-1 text-blue-500 hover:text-blue-600 transition-colors duration-200"
+                            title="Edit Title"
+                          >
+                            <Edit2 size={16} />
+                          </button>
+                        </div>
+                      )}
+                      <p className="text-sm text-gray-500">
+                        Template:{" "}
+                        {resume.template
+                          ? resume.template.charAt(0).toUpperCase() + resume.template.slice(1)
+                          : "N/A"}
+                      </p>
+                      <div className="flex gap-3">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(resume._id);
+                          }}
+                          className="flex-1 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors duration-200 text-sm font-medium"
+                          title="Delete Resume"
+                        >
+                          <Trash2 size={16} className="inline mr-1" /> Delete
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
       </div>
     </div>
   );

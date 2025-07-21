@@ -1,5 +1,7 @@
 .meta-container {
   font-family: Arial, sans-serif;
+    width: 170mm;
+  min-height: 297mm;
 }
 
 .meta-name {
@@ -43,6 +45,7 @@
   font-size: 11px;
   text-align: justify;
   padding-left: 20px;
+    list-style-type: disc; /* ✅ Add this */
 }
 
 .meta-dates {

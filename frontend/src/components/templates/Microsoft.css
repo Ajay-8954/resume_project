@@ -1,60 +1,184 @@
+/* UPDATED EXTERNAL CSS (Microsoft.css) */
+
 body {
-  font-family: Arial, sans-serif;
-}
-
-.microsoft-container {
-  max-width: 210mm;
-  min-height: 297mm;
-  margin: 0 auto;
-  padding: 20mm;
+  font-family: 'Segoe UI', sans-serif;
+  color: #2f2f2f;
+  margin: 0;
+  padding: 0;
   background: white;
-  box-shadow: 0 0 10px rgba(0,0,0,0.1);
 }
 
-.microsoft-name {
-  font-size: 24px;
+@page {
+  size: A4;
+  margin: 10mm;
+}
+
+.resume-container {
+  width: 170mm;
+  min-height: 297mm;
+  background: white;
+  padding: 2.5rem;
+  color: #2d3748;
+  margin: 0 auto;
+}
+
+.resume-header {
   text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.resume-header h1 {
+  font-size: 1.5rem;
   font-weight: bold;
-  margin-bottom: 10px;
-  padding-bottom: 5px;
-  border-bottom: 1px solid #ccc;
+  color: #2563eb;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
 }
 
-.microsoft-contact {
-  text-align: center;
-  font-size: 12px;
-  margin-bottom: 15px;
+.resume-header p {
+  font-size: 0.75rem;
+  color: #718096;
 }
 
-.microsoft-section {
-  margin-bottom: 20px;
+.info{
+  margin-right: 11.5px;
 }
 
-.microsoft-heading {
-  font-size: 14px;
+.section-title {
+  display: flex;
+  align-items: center;
+  margin: 1rem 0;
+}
+
+.section-title span {
+  flex-grow: 1;
+  border-top: 1px solid #60a5fa;
+}
+
+.section-title h2 {
+  margin: 0 1rem;
+  font-size: 0.9rem;
   font-weight: bold;
-  margin-bottom: 10px;
-  border-bottom: 1px solid #ccc;
-  padding-bottom: 5px;
+  text-transform: uppercase;
+  color: #2563eb;
+  letter-spacing: 0.1em;
 }
 
-.microsoft-item {
-  margin-bottom: 15px;
-  font-size: 12px;
+.section-text {
+  font-size: 0.75rem;
 }
 
-.microsoft-flex {
+.work-item,
+.project-item,
+.education-item,
+.achievement-item,
+.certification-item {
+  margin-bottom: 1rem;
+}
+
+.work-item h3,
+.project-item h3,
+.education-item .degree,
+.achievement-item h3,
+.certification-item p {
+  font-size: 0.8rem;
+  font-weight: bold;
+  margin: 0;
+}
+
+.work-item p,
+.project-tech,
+.education-item p {
+  font-size: 0.75rem;
+  color: #4a5568;
+  margin: 0;
+}
+
+.date-right {
+  font-size: 0.75rem;
+  color: #718096;
+  text-align: right;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.education-row,
+.project-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 5px;
+  gap: 1rem;
 }
 
-.microsoft-item ul {
-  padding-left: 20px;
-}
-
-.italic {
+.project-tech {
+  font-size: 0.75rem;
   font-style: italic;
-  font-size: 12px;
+  color: #4a5568;
+  margin: 0.25rem 0;
+}
+
+.project-points,
+.work-list,
+.achievement-item ul {
+  font-size: 0.75rem;
+  color: #4a5568;
+  list-style: disc;
+  padding-left: 1.25rem;
+  margin-top: 0.25rem;
+}
+
+.skills-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 3rem;
+  font-size: 0.75rem;
+  color: #4a5568;
+}
+
+.skills-grid ul {
+  list-style: disc;
+  list-style-position: inside;
+  margin: 0.25rem 0;
+}
+
+.list-disc {
+  padding-left: 1.25rem;
+}
+
+.list-style {
+  list-style: disc;
+  list-style-position: inside;
+  font-size: 0.75rem;
+  color: #4a5568;
+  margin: 0.25rem 0;
+}
+
+@media print {
+  body,
+  html {
+    width: 210mm;
+    height: 297mm;
+  }
+
+  .resume-container {
+    width: 170mm;
+    min-height: 297mm;
+    box-shadow: none;
+    padding: 2.5rem;
+    margin: 0 auto;
+    background: white;
+  }
+
+  section,
+  .work-item,
+  .project-item,
+  .education-item,
+  .achievement-item {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .section-title h2 {
+    color: #2563eb !important;
+  }
 }

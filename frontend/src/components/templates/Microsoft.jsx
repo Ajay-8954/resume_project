@@ -1,138 +1,95 @@
 import React, { forwardRef } from "react";
+import useResumeStore from "../../store/useResumeStore";
+import "./Microsoft.css";
 
-// Helper component for the styled section titles
 const SectionTitle = ({ children }) => (
-  <div className="flex items-center my-6">
-    <span className="flex-grow border-t border-blue-400"></span>
-    <h2 className="text-center mx-4 text-sm font-bold uppercase text-blue-600 tracking-widest">
-      {children}
-    </h2>
-    <span className="flex-grow border-t border-blue-400"></span>
+  <div className="section-title">
+    <span></span>
+    <h2>{children}</h2>
+    <span></span>
   </div>
 );
 
+const formatDate = (dateStr) => {
+  if (!dateStr) return "";
+  const options = { year: "numeric", month: "short" };
+  const date = new Date(dateStr);
+  return isNaN(date) ? dateStr : date.toLocaleDateString("en-US", options);
+};
+
 const Microsoft = forwardRef(({ data = {} }, ref) => {
-  // Destructured data props
+  const { toggle } = useResumeStore();
   const {
     Name = "GABRIELLA TORRES",
-    jobTitle,
     email = "example@example.com",
     phone = "(555) 555-5555",
     location = "Inglewood, CA 90306",
-    summary = "Empathetic nurse practitioner focused on providing quality care and maintaining direct lines of communication with patients and the health care team. Calm, understanding professional bringing solid experience in health environments by diagnosing, evaluating and treating acute and chronic medical conditions through physical examinations and testing. Exceptional critical thinking and decision-making skills.",
+    objective = "",
+    summary = "Empathetic nurse practitioner focused on providing quality care...",
     experience = [],
     education = [],
     skills = [],
     internships = [],
     certifications = [],
     projects = [],
-    // Unused variables
     linkedin,
     github,
     languages,
     interests,
     achievements,
-  } = data;
+  } = data || {};
 
-  const workItems = experience.length > 0 ? experience : internships;
-  const workTitle = experience.length > 0 ? "Work History" : "Internship";
+  const workItems = toggle === "experienced" ? experience : internships;
+  const workTitle = toggle === "experienced" ? "Work History" : "Internships";
 
   return (
-    <div ref={ref} className="bg-white p-10 font-sans text-gray-800 w-full max-w-4xl mx-auto">
-      {/* Header */}
-      <header className="text-center mb-8">
-        <h1 className="text-4xl md:text-5xl font-bold text-blue-600 uppercase tracking-wide">
-          {Name}
-        </h1>
-        <p className="text-xs md:text-sm mt-2 text-gray-600">
-          <span>{location}</span>
-          <span className="mx-2">♦</span>
-          <span>H: {phone}</span>
-          <span className="mx-2">♦</span>
-          <span>C: {phone}</span>
-          <span className="mx-2">♦</span>
-          <span>{email}</span>
+    <div ref={ref} className="resume-container">
+      <header className="resume-header">
+        <h1>{Name}</h1>
+        <p>
+       
+          <span >♦</span>
+          <span className="info"> {phone}</span>
+          <span >♦</span>
+          <span className="info">{email}</span>
+          <span >♦</span>
+          <span className="info">{location}</span>
         </p>
       </header>
 
-      {/* Professional Summary */}
-      {summary && (
+      {toggle === "fresher" && objective && (
         <section>
-          <SectionTitle>Professional Summary</SectionTitle>
-          <p className="text-sm text-justify">{summary}</p>
+          <SectionTitle>Career Objective</SectionTitle>
+          <p className="section-text">{objective}</p>
         </section>
       )}
 
-      {/* Work History / Internship */}
-      {(experience.length > 0 || internships.length > 0) && (
+      {toggle === "experienced" && summary && (
+        <section>
+          <SectionTitle>Professional Summary</SectionTitle>
+          <p className="section-text">{summary}</p>
+        </section>
+      )}
+
+      {workItems.length > 0 && (
         <section>
           <SectionTitle>{workTitle}</SectionTitle>
           {workItems.map((item, idx) => (
-            <div className="mb-5" key={idx}>
-              <div className="flex justify-between items-baseline mb-1">
-                <div className="flex-1">
-                  <h3 className="font-bold text-base">{item.jobTitle}</h3>
-                  <p className="text-sm text-gray-700">{item.company}</p>
+            <div className="work-item" key={idx}>
+              <div className="work-row">
+                <div>
+                  <h3>{item.jobTitle || item.role}</h3>
+                  <p className="section-text">{item.company}</p>
                 </div>
-                <div className="text-sm text-gray-600 whitespace-nowrap pl-4">
-                  <span>{item.startDate} - {item.endDate}</span>
-                </div>
-              </div>
-              <ul className="list-disc pl-5 mt-1 text-sm text-gray-700 space-y-1">
-                {item.description && typeof item.description === 'string'
-                  ? item.description.split('\n').map((point, i) => (
-                      point && <li key={i}>{point}</li>
-                    ))
-                  : Array.isArray(item.description)
-                  ? item.description.map((point, i) => <li key={i}>{point}</li>)
-                  : <li>{item.description}</li>
-                }
-              </ul>
-            </div>
-          ))}
-        </section>
-      )}
-
-      {/* Skills */}
-      {skills.length > 0 && (
-        <section>
-          <SectionTitle>Skills</SectionTitle>
-          <div className="grid grid-cols-2 gap-x-12 text-sm text-gray-700">
-            {(() => {
-              const mid = Math.ceil(skills.length / 2);
-              const col1 = skills.slice(0, mid);
-              const col2 = skills.slice(mid);
-              return (
-                <>
-                  <ul className="list-disc list-inside space-y-1">
-                    {col1.map((skill, idx) => <li key={idx}>{skill}</li>)}
-                  </ul>
-                  <ul className="list-disc list-inside space-y-1">
-                    {col2.map((skill, idx) => <li key={idx}>{skill}</li>)}
-                  </ul>
-                </>
-              );
-            })()}
-          </div>
-        </section>
-      )}
-      
-      {/* Projects Section */}
-      {projects.length > 0 && (
-        <section>
-          <SectionTitle>Projects</SectionTitle>
-          {projects.map((proj, idx) => (
-            <div className="mb-5" key={idx}>
-              <div className="flex justify-between items-baseline mb-1">
-                <h3 className="font-bold text-base">{proj.title}</h3>
-                <div className="text-sm text-gray-600 whitespace-nowrap pl-4">
-                  <span>{proj.startDate} - {proj.endDate}</span>
+                <div className="date-right">
+                  {formatDate(item.startDate)} - {formatDate(item.endDate)}
                 </div>
               </div>
-              <p className="text-sm italic text-gray-600 mb-1">{proj.tech}</p>
-              <ul className="list-disc pl-5 mt-1 text-sm text-gray-700 space-y-1">
-                {/* FIX APPLIED HERE: Using optional chaining (?.) to prevent error */}
-                {proj.points?.map((point, i) => (
+              <ul>
+                {(Array.isArray(item.description)
+                  ? item.description
+                  : (item.description || "").split("\n")
+                ).map((point, i) => (
                   <li key={i}>{point}</li>
                 ))}
               </ul>
@@ -141,35 +98,114 @@ const Microsoft = forwardRef(({ data = {} }, ref) => {
         </section>
       )}
 
-      {/* Education */}
-      {education.length > 0 && (
+      {skills.length > 0 && (
         <section>
-          <SectionTitle>Education</SectionTitle>
-          <div className="space-y-3">
-            {education.map((edu, idx) => (
-              <div key={idx}>
-                <p className="font-bold text-base">{edu.degree}</p>
-                <p className="text-sm text-gray-700">{edu.school}</p>
-              </div>
-            ))}
+          <SectionTitle>Skills</SectionTitle>
+          <div className="skills-grid">
+            {(() => {
+              const mid = Math.ceil(skills.length / 2);
+              const col1 = skills.slice(0, mid);
+              const col2 = skills.slice(mid);
+              return (
+                <>
+                  <ul>{col1.map((skill, idx) => <li key={idx}>{skill}</li>)}</ul>
+                  <ul>{col2.map((skill, idx) => <li key={idx}>{skill}</li>)}</ul>
+                </>
+              );
+            })()}
           </div>
         </section>
       )}
 
-      {/* Certifications */}
+      {projects.length > 0 && (
+        <section>
+          <SectionTitle>Projects</SectionTitle>
+          {projects.map((proj, idx) => (
+            <div className="project-item" key={idx}>
+              <div className="project-row">
+                <h3>{proj.title}</h3>
+                <div className="date-right">
+                  {formatDate(proj.startDate)} - {formatDate(proj.endDate)}
+                </div>
+              </div>
+              <p className="project-tech">{proj.tech}</p>
+              <ul className="section-text">
+                {(Array.isArray(proj.description)
+                  ? proj.description
+                  : (proj.description || "").split("\n")
+                ).filter(Boolean).map((point, i) => <li key={i}>{point}</li>)}
+              </ul>
+            </div>
+          ))}
+        </section>
+      )}
+
+      {education.length > 0 && (
+        <section>
+          <SectionTitle>Education</SectionTitle>
+          {education.map((edu, idx) => (
+            <div key={idx} className="education-item">
+              <div className="education-row">
+                <p>{edu.degree}</p>
+                <span className="date-right">
+                  {formatDate(edu.startDate)} - {formatDate(edu.endDate) || "Present"}
+                </span>
+              </div>
+              <p className="section-text">{edu.school}</p>
+              {edu.cgpa && <span className="section-text">CGPA: {edu.cgpa}</span>}
+            </div>
+          ))}
+        </section>
+      )}
+
       {certifications.length > 0 && (
         <section>
           <SectionTitle>Certifications</SectionTitle>
-          <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
+          <ul className="certification-list">
             {certifications.map((cert, idx) => (
-              <li key={idx}>
-                {cert.name} ({cert.date})
+              <li key={idx} className="certification-item">
+                <p>{cert.name}</p>
+                <span className="date-right">{formatDate(cert.date)}</span>
               </li>
             ))}
           </ul>
         </section>
       )}
 
+      {languages?.length > 0 && (
+        <section>
+          <SectionTitle>Languages</SectionTitle>
+          <ul>{languages.map((lang, idx) => <li key={idx}>{lang}</li>)}</ul>
+        </section>
+      )}
+
+      {achievements?.length > 0 && (
+        <section>
+          <SectionTitle>Achievements</SectionTitle>
+          {achievements.map((ach, idx) => (
+            <div key={idx} className="achievement-item">
+              <div className="work-row">
+                <h3>{ach.title}</h3>
+                <span className="date-right">{formatDate(ach.Date)}</span>
+              </div>
+              <ul>
+                {(ach.description || "")
+                  .split("\n")
+                  .map(line => line.trim())
+                  .filter(Boolean)
+                  .map((point, i) => <li key={i}>{point}</li>)}
+              </ul>
+            </div>
+          ))}
+        </section>
+      )}
+
+      {interests?.length > 0 && (
+        <section>
+          <SectionTitle>Interests</SectionTitle>
+          <ul className="section-text">{interests.map((interest, idx) => <li key={idx}>{interest}</li>)}</ul>
+        </section>
+      )}
     </div>
   );
 });

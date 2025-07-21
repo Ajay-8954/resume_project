@@ -17,6 +17,8 @@
     "framer-motion": "^12.19.1",
     "html2canvas-pro": "^1.5.11",
     "jspdf": "^3.0.1",
+    "juice": "^11.0.1",
+    "lodash": "^4.17.21",
     "lucide-react": "^0.513.0",
     "mammoth": "^1.9.1",
     "pdfjs": "^2.5.3",

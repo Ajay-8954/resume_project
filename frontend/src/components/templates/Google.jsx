@@ -1,167 +1,268 @@
-import React, { forwardRef } from 'react';
+import React, { forwardRef } from "react";
+import useResumeStore from "../../store/useResumeStore";
+import "./Google.css";
 
-// A helper component to render the section titles with the underline, keeping the main component clean.
-const SectionTitle = ({ children }) => (
-  <div className="mb-4">
-    <h2 className="text-xl font-bold text-gray-800">{children}</h2>
-    <div className="w-full h-px bg-gray-300 mt-1"></div>
-  </div>
-);
+const formatDate = (dateStr) => {
+  if (!dateStr) return "";
+  const options = { year: "numeric", month: "short" };
+  const date = new Date(dateStr);
+  return isNaN(date) ? dateStr : date.toLocaleDateString("en-US", options);
+};
 
-// The main resume component
 const Google = forwardRef(({ data = {} }, ref) => {
-  // Destructuring all properties from the provided data object
+  const { toggle } = useResumeStore();
+
   const {
     Name = "Jennifer Jobscan",
     jobTitle = "Product Manager",
     email = "jennifer@jobscan.co",
     phone = "(123) 456-7890",
-    location = "Seattle, WA, 90823",
-    linkedin, // Linkedin and Github are optional
+    linkedin,
     github,
-    summary = "Creative professional and collaborator with 15+ years experience devoted to product, 10+ as a Product Manager and Lead. In-depth knowledge of manufacturing processes, materials, applications, licensing with external partners and approval standards.",
+    summary = "",
+    objective = "",
     experience = [],
-    internship = [],
+    internships = [],
     education = [],
     skills = [],
     languages = [],
     projects = [],
     certifications = [],
-    // 'interests' and 'achievements' from your schema are unused in this visual template, but kept for data completeness
-    interests,
-    achievements,
-  } = data;
+    interests = [],
+    achievements = [],
+  } = data || {};
 
-  // Preserving the logic to choose between experience and internship
-  const workItems = experience.length > 0 ? experience : internship;
-  const workTitle = experience.length > 0 ? "Work Experience" : "Internship";
+  const workItems = toggle === "experienced" ? experience : internships;
+  const workTitle = toggle === "experienced" ? "EXPERIENCE" : "INTERNSHIP";
 
   return (
-    <div ref={ref} className="bg-white p-10 font-sans text-gray-700 max-w-5xl mx-auto">
-      <div className="flex flex-col md:flex-row gap-10">
-        
-        {/* Left Column (Main Content) */}
-        <div className="w-full md:w-2/3">
-          {/* Header */}
-          <header className="mb-8">
-            <h1 className="text-4xl font-bold text-gray-800">{Name}</h1>
-            {jobTitle && <p className="text-lg text-gray-600">{jobTitle}</p>}
-          </header>
-
-          {/* Summary */}
-          {summary && (
-            <section className="mb-8">
-              <p className="text-sm">{summary}</p>
-            </section>
+    <div
+      ref={ref}
+      className="resume-t2 w-full max-w-[170mm] mx-auto p-4 text-gray-900"
+      style={{ minHeight: "297mm" }}
+    >
+      {/* Header */}
+      <div className="header-t2 text-center pb-3">
+        <h1 className="font-bold text-[24px]">{Name}</h1>
+        <div className="contact-info-t2 mt-1 space-x-4 text-[10px]">
+          <span className="mr-2">
+            <strong>Phone:</strong> {phone}
+          </span>
+          <span className="mr-2">
+            <strong>Email:</strong> {email}
+          </span>
+          {linkedin && (
+            <a href={linkedin} className="mr-2 text-blue-500 hover:underline">
+              LinkedIn
+            </a>
           )}
+          {github && (
+            <a href={github} className="mr-2 text-blue-500 hover:underline">
+              Github
+            </a>
+          )}
+        </div>
+      </div>
 
-          {/* Work Experience / Internship */}
-          {workItems.length > 0 && (
-            <section className="mb-6">
-              <SectionTitle>{workTitle}</SectionTitle>
-              {workItems.map((item, idx) => (
-                <div key={idx} className="mb-5">
-                  <div className="flex justify-between items-baseline">
-                    <h3 className="font-bold text-base text-gray-800">{item.jobTitle}</h3>
-                    <p className="text-xs text-gray-600 font-medium">
-                      {item.startDate} - {item.endDate}
-                    </p>
-                  </div>
-                  <p className="text-sm text-gray-600 italic">{item.company}</p>
-                  {/* The template shows paragraphs, not bullets. We'll split the description by newlines. */}
-                  {item.description?.split('\n').map((line, i) => (
-                      line && <p key={i} className="text-sm mt-2">{line}</p>
-                  ))}
+      {/* Summary/Objective */}
+      {toggle === "experienced" && summary && (
+        <section className="section-t2 mt-3">
+          <h2 className="section-title-t2 font-semibold border-b text-[13px]">
+            PROFESSIONAL SUMMARY
+          </h2>
+          <p className="details-t2 mt-1 text-justify text-[11px]">{summary}</p>
+        </section>
+      )}
+
+      {toggle === "fresher" && objective && (
+        <section className="section-t2 mt-3">
+          <h2 className="section-title-t2 font-semibold border-b text-[13px]">
+            CAREER OBJECTIVE
+          </h2>
+          <p className="details-t2 mt-1 text-justify text-[11px]">
+            {objective}
+          </p>
+        </section>
+      )}
+
+      {/* Education */}
+      {education.length > 0 && (
+        <section className="section-t2 mt-3">
+          <h2 className="section-title-t2 font-semibold border-b text-[13px]">
+            EDUCATION
+          </h2>
+          {education.map((edu, idx) => (
+            <div key={idx} className="item-t2 mt-1">
+              <div className="flex justify-between items-baseline">
+                <div>
+                  <p className="font-semibold text-[11px]">{edu.school}</p>
+                  <p className="text-[10px]">{edu.degree}</p>
                 </div>
-              ))}
-            </section>
-          )}
-          
-          {/* Projects Section (As requested) */}
-          {projects.length > 0 && (
-            <section className="mb-6">
-              <SectionTitle>Projects</SectionTitle>
-              {projects.map((proj, idx) => (
-                <div key={idx} className="mb-5">
-                  <div className="flex justify-between items-baseline">
-                    <h3 className="font-bold text-base text-gray-800">{proj.title}</h3>
-                     <p className="text-xs text-gray-600 font-medium">
-                      {proj.startDate} - {proj.endDate}
-                    </p>
-                  </div>
-                  <p className="text-sm text-gray-600 italic">{proj.tech}</p>
-                  <ul className="list-disc list-inside mt-2 text-sm space-y-1">
-                      {proj.points?.map((point, i) => (
-                          <li key={i}>{point}</li>
-                      ))}
-                  </ul>
-                </div>
-              ))}
-            </section>
-          )}
+                <p className="text-gray-700 text-[10px]">
+                  {formatDate(edu.startDate)} - {formatDate(edu.endDate)}
+                </p>
+              </div>
+              {edu.cgpa && <p className="text-gray-700 text-[10px]">CGPA: {edu.cgpa}</p>}
+            </div>
+          ))}
+        </section>
+      )}
 
-          {/* Core Skills */}
-          {skills.length > 0 && (
-            <section className="mb-6">
-              <SectionTitle>Core Skills</SectionTitle>
-              <p className="text-sm">{skills.join(', ')}</p>
-            </section>
-          )}
-
-          {/* Education */}
-          {education.length > 0 && (
-            <section className="mb-6">
-              <SectionTitle>Education</SectionTitle>
-              {education.map((edu, idx) => (
-                <div key={idx} className="flex justify-between items-baseline">
-                  <div>
-                    <h3 className="font-bold text-base text-gray-800">{edu.school}</h3>
-                    <p className="text-sm">{edu.degree}</p>
-                  </div>
-                  <p className="text-xs text-gray-600 font-medium">
-                    {edu.startDate} - {edu.endDate}
+      {/* Work/Internship */}
+      {workItems.length > 0 && (
+        <section className="section-t2 mt-3">
+          <h2 className="section-title-t2 font-semibold border-b text-[13px]">
+            {workTitle}
+          </h2>
+          {workItems.map((item, idx) => (
+            <div key={idx} className="item-t2 mt-1">
+              <div className="flex justify-between items-baseline">
+                <div>
+                  <p className="font-semibold text-[11px]">
+                    {item.company} - {item.jobTitle}
                   </p>
                 </div>
-              ))}
-            </section>
-          )}
+                <p className="text-gray-700 text-[10px]">
+                  {formatDate(item.startDate)} - {formatDate(item.endDate)}
+                </p>
+              </div>
+              <ul className="list-disc list-inside ml-4 mt-1 text-gray-800 leading-tight">
+                {Array.isArray(item.description)
+                  ? item.description.map((point, i) => (
+                      <li key={i} className="text-[10px]">{point}</li>
+                    ))
+                  : (item.description || "")
+                      .split("\n")
+                      .filter(Boolean)
+                      .map((point, i) => (
+                        <li key={i} className="text-[10px]">{point}</li>
+                      ))}
+              </ul>
+            </div>
+          ))}
+        </section>
+      )}
 
-          {/* Certifications (As requested) */}
-          {certifications.length > 0 && (
-            <section className="mb-6">
-                <SectionTitle>Certifications</SectionTitle>
-                <ul className="list-disc list-inside text-sm space-y-2">
-                    {certifications.map((cert, idx) => (
-                        <li key={idx}>
-                            <span className="font-bold">{cert.name}</span> - <span className="italic">{cert.issuer}</span> ({cert.Date})
-                        </li>
-                    ))}
-                </ul>
-            </section>
-          )}
+      {/* Projects */}
+      {projects.length > 0 && (
+        <section className="section-t2 mt-3">
+          <h2 className="section-title-t2 font-semibold border-b text-[13px]">
+            PROJECTS
+          </h2>
+          {projects.map((proj, idx) => (
+            <div key={idx} className="item-t2 mt-1">
+              <div className="flex justify-between items-baseline">
+                <div>
+                  <p className="font-semibold text-[11px]">
+                    {proj.title} - {proj.tech}
+                  </p>
+                </div>
+                <p className="text-gray-700 text-[10px]">
+                  {formatDate(proj.startDate)} - {formatDate(proj.endDate)}
+                </p>
+              </div>
+              <ul className="list-disc list-inside ml-4 mt-1 leading-tight">
+                {(Array.isArray(proj.description)
+                  ? proj.description
+                  : (proj.description || "")
+                      .split("\n")
+                      .map((line) => line.trim())
+                      .map((point) => point.replace(/^[-•]\s*/, ""))
+                      .filter(Boolean)
+                ).map((point, i) => (
+                  <li key={i} className="break-words text-wrap leading-tight text-[10px]">
+                    {point}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </section>
+      )}
 
-          {/* Languages */}
-          {languages.length > 0 && (
-            <section>
-              <SectionTitle>Languages</SectionTitle>
-              <p className="text-sm">{languages.join(', ')}</p>
-            </section>
-          )}
+      {/* Skills */}
+      {skills.length > 0 && (
+        <section className="section-t2 skills-section mt-3">
+          <h2 className="section-title-t2 font-semibold border-b text-[13px]">
+            SKILLS
+          </h2>
+          <ul className="grid grid-cols-2 gap-1 list-disc list-inside pl-5">
+            {skills.map((skill, idx) => (
+              <li key={idx} className="text-[10px]">{skill}</li>
+            ))}
+          </ul>
+        </section>
+      )}
 
-        </div>
+      {/* Other sections */}
+      {languages.length > 0 && (
+        <section className="section-t2 mt-3">
+          <h2 className="section-title-t2 font-semibold border-b text-[13px]">
+            LANGUAGES
+          </h2>
+          <ul className="list-disc list-inside ml-4 mt-1 space-y-0.5">
+            {languages.map((lang, idx) => (
+              <li key={idx} className="text-[10px]">{lang}</li>
+            ))}
+          </ul>
+        </section>
+      )}
 
-        {/* Right Column (Contact Info) */}
-        <div className="w-full md:w-1/3 text-left md:text-right">
-          <div className="text-sm space-y-1">
-            {email && <p>{email}</p>}
-            {linkedin && <p>{linkedin}</p>}
-            {github && <p>{github}</p>}
-            {phone && <p>{phone}</p>}
-            {location && <p>{location}</p>}
-          </div>
-        </div>
+          {interests.length > 0 && (
+        <section className="section-t2 mt-3">
+          <h2 className="section-title-t2 font-semibold border-b text-[13px]">
+            INTERESTS
+          </h2>
+          <ul className="list-disc list-inside ml-4 mt-1 text-[11px] space-y-0.5">
+            {interests.map((interest, idx) => (
+              <li key={idx}>{interest}</li>
+            ))}
+          </ul>
+        </section>
+      )}
 
-      </div>
+      {achievements.length > 0 && (
+        <section className="section-t2 mt-3">
+          <h2 className="section-title-t2 font-semibold border-b text-[13px]">
+            ACHIEVEMENTS
+          </h2>
+          {achievements.map((ach, idx) => (
+            <div key={idx} className="item-t2 mt-1 text-[11px]">
+              <div className="flex justify-between items-baseline">
+                <p className="font-semibold">{ach.title}</p>
+                <p className="text-gray-700">{formatDate(ach.Date)}</p>
+              </div>
+              <ul className="list-disc list-inside ml-4 mt-1 leading-tight">
+                {Array.isArray(ach.description)
+                  ? ach.description.map((point, i) => <li key={i}>{point}</li>)
+                  : (ach.description || "")
+                      .split("\n")
+                      .filter(Boolean)
+                      .map((point, i) => <li key={i}>{point}</li>)}
+              </ul>
+            </div>
+          ))}
+        </section>
+      )}
+
+      {certifications.length > 0 && (
+        <section className="section-t2 mt-3">
+          <h2 className="section-title-t2 font-semibold border-b text-[13px]">
+            CERTIFICATIONS
+          </h2>
+          {certifications.map((cert, idx) => (
+            <div key={idx} className="item-t2 mt-1 text-[11px]">
+              <div className="flex justify-between items-baseline">
+                <p className="font-semibold">
+                  {cert.name} - {cert.issuer}
+                </p>
+                <p className="text-gray-700">{formatDate(cert.Date)}</p>
+              </div>
+            </div>
+          ))}
+        </section>
+      )}
+      {/* Rest of the sections (Interests, Achievements, Certifications) follow same pattern */}
     </div>
   );
 });
