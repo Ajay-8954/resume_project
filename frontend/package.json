@@ -12,6 +12,7 @@
   "dependencies": {
     "@tailwindcss/vite": "^4.1.8",
     "axios": "^1.10.0",
+    "date-fns": "^4.1.0",
     "dom-to-image": "^2.6.0",
     "dom-to-image-more": "^3.6.0",
     "framer-motion": "^12.19.1",
@@ -24,6 +25,7 @@
     "pdfjs": "^2.5.3",
     "pdfjs-dist": "^5.3.31",
     "react": "^19.1.0",
+    "react-datepicker": "^8.4.0",
     "react-dom": "^19.1.0",
     "react-router-dom": "^7.6.2",
     "react-to-pdf": "^2.0.1",

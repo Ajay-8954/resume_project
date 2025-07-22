@@ -361,3 +361,74 @@ Now, generate the JSON object based on the provided text.
     except Exception as e:
         current_app.logger.error(f"Final JSON parsing failed: {str(e)}")
         return jsonify({"error": f"Failed to generate resume JSON for builder: {str(e)}"}), 500
+    
+    
+    
+@optimize_bp.route("/generate-summary", methods=["POST"])
+def generate_summary():
+    """
+    Generate a professional summary based on the user's experience and skills.
+    Expects a JSON payload with 'experience' and 'skills' fields.
+    Returns a JSON object with a 'summary' field containing the generated summary.
+    """
+    data = request.get_json()
+    experience = data.get('experience', [])
+    skills = data.get('skills', [])
+
+    if not experience and not skills:
+        return jsonify({"error": "At least one of experience or skills is required."}), 400
+
+    # Format experience for the prompt
+    formatted_experience = []
+    for exp in experience:
+        formatted_experience.append(
+            f"Role: {exp.get('role', '')}\n"
+            f"Company: {exp.get('company', '')}\n"
+            f"Duration: {exp.get('startDate', '')} - {exp.get('endDate', '')}\n"
+            f"Responsibilities: {exp.get('description', '')}\n"
+        )
+    
+    formatted_skills = ", ".join(skills) if skills else "None provided"
+
+    prompt = f"""
+You are an expert Career Strategist tasked with generating a concise, impactful professional summary for a resume. The summary should highlight the candidate's experience and skills, tailored to a professional context. The summary must be 3-5 sentences long, professional, and aligned with the provided experience and skills.
+
+**CONTEXT:**
+**Experience:**
+{"".join(formatted_experience)}
+**Skills:**
+{formatted_skills}
+
+**REQUIREMENTS:**
+- Generate a professional summary that reflects the candidate's experience and skills.
+- Keep it concise (3-5 sentences, max 150 words).
+- Use a professional tone suitable for a resume.
+- Return the result in JSON format with a single key: `summary`.
+
+**EXAMPLE OUTPUT:**
+{{
+  "summary": "Results-driven Software Engineer with over 5 years of experience developing scalable web applications at leading tech firms. Proficient in Java, Python, and cloud technologies, with a proven track record of delivering high-impact projects that enhance system performance. Skilled in leading cross-functional teams to meet tight deadlines while maintaining code quality."
+}}
+"""
+    try:
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.3,  # Moderate temperature for balanced creativity and consistency
+            response_format={"type": "json_object"},
+            timeout=60.0
+        )
+        
+        response_text = response.choices[0].message.content
+        summary_data = json.loads(response_text)
+        
+        if not summary_data.get("summary"):
+            return jsonify({"error": "Failed to generate a valid summary."}), 500
+
+        return jsonify(summary_data)
+        
+    except Exception as e:
+        current_app.logger.error(f"Professional summary generation failed: {str(e)}")
+        return jsonify({"error": f"Failed to generate summary: {str(e)}"}), 500   
+    
+

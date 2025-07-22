@@ -1,6 +1,9 @@
 import React, { useRef, useState, useEffect } from "react";
 import { CloudUpload, Trash2, Pencil } from "lucide-react";
 import useResumeStore from "../store/useResumeStore";
+import "react-datepicker/dist/react-datepicker.css";
+import DatePicker from "react-datepicker";
+import { format, parse, isValid } from "date-fns";
 
 export default function ResumeForm() {
   const {
@@ -83,6 +86,28 @@ export default function ResumeForm() {
   const [skillSuggestions, setSkillSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(0);
+
+  const generateProfessionalSummary = async () => {
+    setIsGenerating(true);
+    try {
+      const response = await fetch("http://localhost:5000/generate-summary", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          experience: manualForm.experience || [],
+          skills: manualForm.skills || [],
+        }),
+      });
+      const data = await response.json();
+      if (data.summary) {
+        handleFieldChange("summary", data.summary);
+      }
+    } catch (error) {
+      alert("Error generating summary: " + error.message);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   const fetchSkillSuggestions = async (input) => {
     try {
@@ -641,6 +666,71 @@ export default function ResumeForm() {
     console.log("Current manualForm state:", manualForm);
   }, [manualForm]);
 
+  // Month/Year Picker Component
+
+const MonthYearPicker = ({ label, value, onChange, required, disabled }) => {
+  const parseDate = (value) => {
+    console.log(`Parsing date for ${label}:`, value); // Debug log
+    if (!value || value === "Present" || typeof value !== "string") {
+      console.warn(`Invalid input for ${label}:`, value);
+      return null;
+    }
+    const dateFormatRegex = /^[A-Za-z]{3}\s\d{4}$/;
+    if (!dateFormatRegex.test(value.trim())) {
+      console.warn(`Invalid date format for ${label}:`, value);
+      return null;
+    }
+    try {
+      const parsedDate = parse(value.trim(), "MMM yyyy", new Date());
+      if (!isValid(parsedDate)) {
+        console.warn(`Parsed date is invalid for ${label}:`, value);
+        return null;
+      }
+      return parsedDate;
+    } catch (error) {
+      console.warn(`Error parsing date for ${label}:`, value, error);
+      return null;
+    }
+  };
+
+  const formatDate = (date) => {
+    if (!date || !isValid(date)) {
+      console.warn(`Invalid date object for ${label}:`, date);
+      return "";
+    }
+    try {
+      return format(date, "MMM yyyy");
+    } catch (error) {
+      console.warn(`Error formatting date for ${label}:`, date, error);
+      return "";
+    }
+  };
+
+  const selectedDate = parseDate(value);
+
+  return (
+    <div>
+      <label className="block text-sm text-gray-500 mb-1">{label}</label>
+      <DatePicker
+        selected={selectedDate}
+        onChange={(date) => {
+          console.log(`Selected date for ${label}:`, date); // Debug log
+          onChange(formatDate(date));
+        }}
+        dateFormat="MMM yyyy"
+        showMonthYearPicker
+        className="w-full border border-gray-300 rounded-md p-2 text-sm"
+        placeholderText="Select Month Year"
+        disabled={disabled}
+        required={required}
+      />
+      {required && !value && (
+        <p>{label} is required</p>
+      )}
+    </div>
+  );
+};
+
   return (
     <section className="space-y-1 max-w-3xl mx-auto bg-white shadow-lg p-5 rounded-xl ">
       <div className="flex justify-between items-center">
@@ -849,6 +939,35 @@ export default function ResumeForm() {
             <h2 className="text-xl font-semibold text-gray-700">
               Professional Summary
             </h2>
+
+            <button
+              onClick={generateProfessionalSummary}
+              disabled={isGenerating}
+              className={`flex items-center gap-2 px-3 py-1 rounded-md text-sm ${
+                isGenerating
+                  ? "bg-gray-200"
+                  : "bg-green-100 hover:bg-green-200 text-green-800"
+              }`}
+            >
+              {isGenerating ? (
+                <>
+                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                    <circle
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      fill="none"
+                      strokeWidth="4"
+                    />
+                  </svg>
+                  Generating...
+                </>
+              ) : (
+                "✨ Generate with AI"
+              )}
+            </button>
+
             <button
               className="bg-blue-50 text-blue-600 px-3 py-1 rounded-md text-sm hover:bg-blue-100 transition-colors"
               onClick={async () => {
@@ -932,15 +1051,12 @@ export default function ResumeForm() {
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-500 mb-1">
-                    Start Date*
-                  </label>
-                  <input
-                    type="date"
-                    className="w-full border border-gray-300 rounded-md p-2 text-sm"
+                  
+                  <MonthYearPicker
+                    label="Start Date*"
                     value={exp.startDate || ""}
-                    onChange={(e) =>
-                      handleExperienceChange(index, "startDate", e.target.value)
+                    onChange={(value) =>
+                      handleExperienceChange(index, "startDate", value)
                     }
                     required
                   />
@@ -951,9 +1067,6 @@ export default function ResumeForm() {
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-500 mb-1">
-                    End Date
-                  </label>
                   <div className="flex items-center gap-2">
                     {exp.endDate === "Present" ? (
                       <input
@@ -963,16 +1076,11 @@ export default function ResumeForm() {
                         disabled
                       />
                     ) : (
-                      <input
-                        type="date"
-                        className="w-full border border-gray-300 rounded-md p-2 text-sm"
+                      <MonthYearPicker
+                        label="End Date"
                         value={exp.endDate || ""}
-                        onChange={(e) =>
-                          handleExperienceChange(
-                            index,
-                            "endDate",
-                            e.target.value
-                          )
+                        onChange={(value) =>
+                          handleExperienceChange(index, "endDate", value)
                         }
                       />
                     )}
@@ -1177,16 +1285,10 @@ export default function ResumeForm() {
                 )}
               </div>
               <div>
-                <label className="block text-sm text-gray-500 mb-1">
-                  Start Date*
-                </label>
-                <input
-                  type="date"
-                  className="w-full border border-gray-300 rounded-md p-2 text-sm"
+                   <MonthYearPicker
+                  label="Start Date*"
                   value={edu.startDate || ""}
-                  onChange={(e) =>
-                    handleEducationChange(index, "startDate", e.target.value)
-                  }
+                  onChange={(value) => handleEducationChange(index, "startDate", value)}
                   required
                 />
                 {!edu.startDate && (
@@ -1208,13 +1310,10 @@ export default function ResumeForm() {
                       disabled
                     />
                   ) : (
-                    <input
-                      type="date"
-                      className="w-full border border-gray-300 rounded-md p-2 text-sm"
+                     <MonthYearPicker
+                      label="End Date"
                       value={edu.endDate || ""}
-                      onChange={(e) =>
-                        handleEducationChange(index, "endDate", e.target.value)
-                      }
+                      onChange={(value) => handleEducationChange(index, "endDate", value)}
                     />
                   )}
                   <label className="text-sm whitespace-nowrap">
@@ -1538,16 +1637,10 @@ export default function ResumeForm() {
                 )}
               </div>
               <div>
-                <label className="block text-sm text-gray-500 mb-1">
-                  Start Date*
-                </label>
-                <input
-                  type="date"
-                  className="w-full border border-gray-300 rounded-md p-2 text-sm"
+                   <MonthYearPicker
+                  label="Start Date*"
                   value={project.startDate || ""}
-                  onChange={(e) =>
-                    handleProjectChange(index, "startDate", e.target.value)
-                  }
+                  onChange={(value) => handleProjectChange(index, "startDate", value)}
                   required
                 />
                 {!project.startDate && (
@@ -1569,13 +1662,10 @@ export default function ResumeForm() {
                       disabled
                     />
                   ) : (
-                    <input
-                      type="date"
-                      className="w-full border border-gray-300 rounded-md p-2 text-sm"
+                     <MonthYearPicker
+                      label="End Date"
                       value={project.endDate || ""}
-                      onChange={(e) =>
-                        handleProjectChange(index, "endDate", e.target.value)
-                      }
+                      onChange={(value) => handleProjectChange(index, "endDate", value)}
                     />
                   )}
                   <label className="text-sm whitespace-nowrap">
@@ -1786,16 +1876,10 @@ export default function ResumeForm() {
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-500 mb-1">
-                    Start Date*
-                  </label>
-                  <input
-                    type="date"
-                    className="w-full border border-gray-300 rounded-md p-2 text-sm"
+                  <MonthYearPicker
+                    label="Start Date*"
                     value={internship.startDate || ""}
-                    onChange={(e) =>
-                      handleInternshipChange(index, "startDate", e.target.value)
-                    }
+                    onChange={(value) => handleInternshipChange(index, "startDate", value)}
                     required
                   />
                   {!internship.startDate && (
@@ -1817,17 +1901,10 @@ export default function ResumeForm() {
                         disabled
                       />
                     ) : (
-                      <input
-                        type="date"
-                        className="w-full border border-gray-300 rounded-md p-2 text-sm"
+                      <MonthYearPicker
+                        label="End Date"
                         value={internship.endDate || ""}
-                        onChange={(e) =>
-                          handleInternshipChange(
-                            index,
-                            "endDate",
-                            e.target.value
-                          )
-                        }
+                        onChange={(value) => handleInternshipChange(index, "endDate", value)}
                       />
                     )}
                     <label className="text-sm whitespace-nowrap">
@@ -2243,18 +2320,12 @@ export default function ResumeForm() {
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-500 mb-1">
-                    Date*
-                  </label>
-                  <input
-                    type="date"
-                    className="w-full border border-gray-300 rounded-md p-2 text-sm"
-                    value={cert.date || ""}
-                    onChange={(e) =>
-                      handleCertificationChange(index, "date", e.target.value)
-                    }
-                    required
-                  />
+                 <MonthYearPicker
+                  label="Date*"
+                  value={cert.date || ""}
+                  onChange={(value) => handleCertificationChange(index, "date", value)}
+                  required
+                />
                   {!cert.date && (
                     <p className="text-red-500 text-xs mt-1">
                       Date is required
