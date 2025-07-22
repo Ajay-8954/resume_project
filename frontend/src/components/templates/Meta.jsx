@@ -2,16 +2,15 @@ import React, { useRef, forwardRef } from "react";
 import useResumeStore from "../../store/useResumeStore";
 import "./Meta.css";
 
-const formatDate = (dateStr) => {
-  if (!dateStr) return "";
-  const options = { year: "numeric", month: "short" }; // e.g., Jan 2023
-  const date = new Date(dateStr);
-  return isNaN(date) ? dateStr : date.toLocaleDateString("en-US", options);
-};
+// const formatDate = (dateStr) => {
+//   if (!dateStr) return "";
+//   const options = { year: "numeric", month: "short" }; // e.g., Jan 2023
+//   const date = new Date(dateStr);
+//   return isNaN(date) ? dateStr : date.toLocaleDateString("en-US", options);
+// };
 
 const Meta = forwardRef(({ data = {} }, ref) => {
-
-   const { toggle } = useResumeStore();
+  const { toggle } = useResumeStore();
 
   const {
     Name,
@@ -22,7 +21,7 @@ const Meta = forwardRef(({ data = {} }, ref) => {
     linkedin,
     github,
     summary,
-    objective="",
+    objective = "",
     experience,
     internships,
     education,
@@ -34,19 +33,14 @@ const Meta = forwardRef(({ data = {} }, ref) => {
     projects,
   } = data || {};
 
-
-    const workItems = toggle === "experienced" ? experience : internships;
-  const workTitle = toggle === "experienced" ? "WORK EXPERIENCE" : "INTERNSHIPS";
-
-
   return (
     <div ref={ref} className="meta-container">
       {/* Header */}
       <header className="meta-header">
         <h1 className="meta-name">{Name}</h1>
         <div className="meta-contact">
-          {phone && <span>{phone}</span>} |&nbsp;
-          {email && <span>{email}</span>} |&nbsp;
+          {phone && <span>{phone}</span>} | 
+          {email && <span>{email}</span>} | 
           {location && <span>{location}</span>}
         </div>
         <div className="meta-links">
@@ -64,8 +58,7 @@ const Meta = forwardRef(({ data = {} }, ref) => {
       </header>
       <hr />
 
-      {/* Professional Summary */}
-     {/* Objective or Summary */}
+      {/* Objective or Summary */}
       {toggle === "fresher" && objective && (
         <section className="meta-section">
           <h2 className="meta-section-heading">CAREER OBJECTIVE</h2>
@@ -79,7 +72,6 @@ const Meta = forwardRef(({ data = {} }, ref) => {
         </section>
       )}
 
-
       {/* Education */}
       {education?.length > 0 && (
         <section className="meta-section">
@@ -91,7 +83,7 @@ const Meta = forwardRef(({ data = {} }, ref) => {
                   {edu.degree} - {edu.school}
                 </strong>
                 <strong className="meta-dates">
-                  {formatDate(edu.startDate)} - {formatDate(edu.endDate)}
+                  {edu.startDate} - {edu.endDate}
                 </strong>
               </div>
               {edu.cgpa && <div className="meta-cgpa">CGPA: {edu.cgpa}</div>}
@@ -100,7 +92,7 @@ const Meta = forwardRef(({ data = {} }, ref) => {
         </section>
       )}
 
-      {/* Skills */}
+           {/* Skills */}
       {skills?.length > 0 && (
         <section className="meta-section">
           <h2 className="meta-section-heading">SKILLS</h2>
@@ -109,36 +101,61 @@ const Meta = forwardRef(({ data = {} }, ref) => {
       )}
 
       {/* Internships */}
-      {(experience?.length > 0 ? experience : internships)?.length > 0 && (
+      {internships?.length > 0 && (
         <section className="meta-section">
-          <h2 className="meta-section-heading">
-            {experience?.length > 0 ? "WORK EXPERIENCE" : "INTERNSHIP"}
-          </h2>
-          {(experience?.length > 0 ? experience : internships).map(
-            (item, i) => (
-              <div key={i} className="meta-item">
-                <div className="meta-flex">
-                  <strong>
-                    <i>{item.jobTitle || item.role}</i> - {item.company}
-                  </strong>
-                  <strong className="meta-dates">
-                    {formatDate(item.startDate)} - {formatDate(item.endDate)}
-                  </strong>
-                </div>
-                <ul className="meta-bullets">
-                  {(item.description || "")
-                    .split("\n")
-                    .map((point) => point.trim())
-                    .filter(Boolean)
-                    .map((point, j) => (
-                      <li key={j}>{point}</li>
-                    ))}
-                </ul>
+          <h2 className="meta-section-heading">INTERNSHIPS</h2>
+          {internships.map((item, i) => (
+            <div key={i} className="meta-item">
+              <div className="meta-flex">
+                <strong>
+                  <i>{item.jobTitle || item.role}</i> - {item.company}
+                </strong>
+                <strong className="meta-dates">
+                  {item.startDate} - {item.endDate}
+                </strong>
               </div>
-            )
-          )}
+              <ul className="meta-bullets">
+                {(item.description || "")
+                  .split("\n")
+                  .map((point) => point.trim())
+                  .filter(Boolean)
+                  .map((point, j) => (
+                    <li key={j}>{point}</li>
+                  ))}
+              </ul>
+            </div>
+          ))}
         </section>
       )}
+
+           {/* Work Experience */}
+      {experience?.length > 0 && (
+        <section className="meta-section">
+          <h2 className="meta-section-heading">WORK EXPERIENCE</h2>
+          {experience.map((item, i) => (
+            <div key={i} className="meta-item">
+              <div className="meta-flex">
+                <strong>
+                  <i>{item.jobTitle || item.role}</i> - {item.company}
+                </strong>
+                <strong className="meta-dates">
+                  {item.startDate} - {item.endDate}
+                </strong>
+              </div>
+              <ul className="meta-bullets">
+                {(item.description || "")
+                  .split("\n")
+                  .map((point) => point.trim())
+                  .filter(Boolean)
+                  .map((point, j) => (
+                    <li key={j}>{point}</li>
+                  ))}
+              </ul>
+            </div>
+          ))}
+        </section>
+      )}
+
 
       {/* Projects */}
       {projects?.length > 0 && (
@@ -149,7 +166,7 @@ const Meta = forwardRef(({ data = {} }, ref) => {
               <div className="meta-flex">
                 <strong>{proj.title}</strong>
                 <strong className="meta-dates">
-                  {formatDate(proj.startDate)} - {formatDate(proj.endDate)}
+                  {proj.startDate} - {proj.endDate}
                 </strong>
               </div>
               <ul className="meta-bullets">
@@ -198,7 +215,7 @@ const Meta = forwardRef(({ data = {} }, ref) => {
           <ul className="meta-bullets">
             {certifications.map((cert, i) => (
               <li key={i}>
-                {cert.name} — {cert.issuer} ({formatDate(cert.Date)})
+                {cert.name} — {cert.issuer} ({cert.Date})
               </li>
             ))}
           </ul>
@@ -212,6 +229,17 @@ const Meta = forwardRef(({ data = {} }, ref) => {
           <ul className="meta-bullets">
             {interests.map((interest, i) => (
               <li key={i}>{interest}</li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+       {languages?.length > 0 && (
+        <section className="meta-section">
+          <h2 className="meta-section-heading">LANGUAGES</h2>
+          <ul className="meta-bullets">
+            {languages.map((lang, i) => (
+              <li key={i}>{lang}</li>
             ))}
           </ul>
         </section>

@@ -32,9 +32,6 @@ const Google = forwardRef(({ data = {} }, ref) => {
     achievements = [],
   } = data || {};
 
-  const workItems = toggle === "experienced" ? experience : internships;
-  const workTitle = toggle === "experienced" ? "EXPERIENCE" : "INTERNSHIP";
-
   return (
     <div
       ref={ref}
@@ -108,13 +105,27 @@ const Google = forwardRef(({ data = {} }, ref) => {
         </section>
       )}
 
-      {/* Work/Internship */}
-      {workItems.length > 0 && (
+        {/* Skills */}
+      {skills.length > 0 && (
+        <section className="section-t2 skills-section mt-3">
+          <h2 className="section-title-t2 font-semibold border-b text-[13px]">
+            SKILLS
+          </h2>
+          <ul className="grid grid-cols-2 gap-1 list-disc list-inside pl-5">
+            {skills.map((skill, idx) => (
+              <li key={idx} className="text-[10px]">{skill}</li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {/* Internship */}
+      {internships.length > 0 && (
         <section className="section-t2 mt-3">
           <h2 className="section-title-t2 font-semibold border-b text-[13px]">
-            {workTitle}
+            INTERNSHIP
           </h2>
-          {workItems.map((item, idx) => (
+          {internships.map((item, idx) => (
             <div key={idx} className="item-t2 mt-1">
               <div className="flex justify-between items-baseline">
                 <div>
@@ -142,6 +153,42 @@ const Google = forwardRef(({ data = {} }, ref) => {
           ))}
         </section>
       )}
+
+       {/* Experience */}
+      {experience.length > 0 && (
+        <section className="section-t2 mt-3">
+          <h2 className="section-title-t2 font-semibold border-b text-[13px]">
+            EXPERIENCE
+          </h2>
+          {experience.map((item, idx) => (
+            <div key={idx} className="item-t2 mt-1">
+              <div className="flex justify-between items-baseline">
+                <div>
+                  <p className="font-semibold text-[11px]">
+                    {item.company} - {item.jobTitle}
+                  </p>
+                </div>
+                <p className="text-gray-700 text-[10px]">
+                  {formatDate(item.startDate)} - {formatDate(item.endDate)}
+                </p>
+              </div>
+              <ul className="list-disc list-inside ml-4 mt-1 text-gray-800 leading-tight">
+                {Array.isArray(item.description)
+                  ? item.description.map((point, i) => (
+                      <li key={i} className="text-[10px]">{point}</li>
+                    ))
+                  : (item.description || "")
+                      .split("\n")
+                      .filter(Boolean)
+                      .map((point, i) => (
+                        <li key={i} className="text-[10px]">{point}</li>
+                      ))}
+              </ul>
+            </div>
+          ))}
+        </section>
+      )}
+
 
       {/* Projects */}
       {projects.length > 0 && (
@@ -180,47 +227,8 @@ const Google = forwardRef(({ data = {} }, ref) => {
         </section>
       )}
 
-      {/* Skills */}
-      {skills.length > 0 && (
-        <section className="section-t2 skills-section mt-3">
-          <h2 className="section-title-t2 font-semibold border-b text-[13px]">
-            SKILLS
-          </h2>
-          <ul className="grid grid-cols-2 gap-1 list-disc list-inside pl-5">
-            {skills.map((skill, idx) => (
-              <li key={idx} className="text-[10px]">{skill}</li>
-            ))}
-          </ul>
-        </section>
-      )}
 
       {/* Other sections */}
-      {languages.length > 0 && (
-        <section className="section-t2 mt-3">
-          <h2 className="section-title-t2 font-semibold border-b text-[13px]">
-            LANGUAGES
-          </h2>
-          <ul className="list-disc list-inside ml-4 mt-1 space-y-0.5">
-            {languages.map((lang, idx) => (
-              <li key={idx} className="text-[10px]">{lang}</li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-          {interests.length > 0 && (
-        <section className="section-t2 mt-3">
-          <h2 className="section-title-t2 font-semibold border-b text-[13px]">
-            INTERESTS
-          </h2>
-          <ul className="list-disc list-inside ml-4 mt-1 text-[11px] space-y-0.5">
-            {interests.map((interest, idx) => (
-              <li key={idx}>{interest}</li>
-            ))}
-          </ul>
-        </section>
-      )}
-
       {achievements.length > 0 && (
         <section className="section-t2 mt-3">
           <h2 className="section-title-t2 font-semibold border-b text-[13px]">
@@ -262,7 +270,32 @@ const Google = forwardRef(({ data = {} }, ref) => {
           ))}
         </section>
       )}
-      {/* Rest of the sections (Interests, Achievements, Certifications) follow same pattern */}
+
+        {interests.length > 0 && (
+        <section className="section-t2 mt-3">
+          <h2 className="section-title-t2 font-semibold border-b text-[13px]">
+            INTERESTS
+          </h2>
+          <ul className="list-disc list-inside ml-4 mt-1 text-[11px] space-y-0.5">
+            {interests.map((interest, idx) => (
+              <li key={idx}>{interest}</li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+       {languages.length > 0 && (
+        <section className="section-t2 mt-3">
+          <h2 className="section-title-t2 font-semibold border-b text-[13px]">
+            LANGUAGES
+          </h2>
+          <ul className="list-disc list-inside ml-4 mt-1 space-y-0.5">
+            {languages.map((lang, idx) => (
+              <li key={idx} className="text-[10px]">{lang}</li>
+            ))}
+          </ul>
+        </section>
+      )}
     </div>
   );
 });

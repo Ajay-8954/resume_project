@@ -299,6 +299,7 @@ def parse_final_resume_to_json():
                 {{
                     "degree": "Degree Name",
                     "school": "School Name",
+                    "level": "type of education level",
                     "startDate": "Year",
                     "endDate": "Year",
                     "cgpa": "X.XX/4.0"  

@@ -47,12 +47,11 @@ const Microsoft = forwardRef(({ data = {} }, ref) => {
       <header className="resume-header">
         <h1>{Name}</h1>
         <p>
-       
-          <span >♦</span>
-          <span className="info"> {phone}</span>
-          <span >♦</span>
+          <span>♦</span>
+          <span className="info">{phone}</span>
+          <span>♦</span>
           <span className="info">{email}</span>
-          <span >♦</span>
+          <span>♦</span>
           <span className="info">{location}</span>
         </p>
       </header>
@@ -71,28 +70,19 @@ const Microsoft = forwardRef(({ data = {} }, ref) => {
         </section>
       )}
 
-      {workItems.length > 0 && (
+      {education.length > 0 && (
         <section>
-          <SectionTitle>{workTitle}</SectionTitle>
-          {workItems.map((item, idx) => (
-            <div className="work-item" key={idx}>
-              <div className="work-row">
-                <div>
-                  <h3>{item.jobTitle || item.role}</h3>
-                  <p className="section-text">{item.company}</p>
-                </div>
-                <div className="date-right">
-                  {formatDate(item.startDate)} - {formatDate(item.endDate)}
-                </div>
+          <SectionTitle>Education</SectionTitle>
+          {education.map((edu, idx) => (
+            <div key={idx} className="education-item">
+              <div className="education-row">
+                <p>{edu.degree}</p>
+                <span className="date-right">
+                  {formatDate(edu.startDate)} - {formatDate(edu.endDate) || "Present"}
+                </span>
               </div>
-              <ul>
-                {(Array.isArray(item.description)
-                  ? item.description
-                  : (item.description || "").split("\n")
-                ).map((point, i) => (
-                  <li key={i}>{point}</li>
-                ))}
-              </ul>
+              <p className="section-text">{edu.school}</p>
+              {edu.cgpa && <span className="section-text">CGPA: {edu.cgpa}</span>}
             </div>
           ))}
         </section>
@@ -117,6 +107,33 @@ const Microsoft = forwardRef(({ data = {} }, ref) => {
         </section>
       )}
 
+      {workItems.length > 0 && (
+        <section>
+          <SectionTitle>{workTitle}</SectionTitle>
+          {workItems.map((item, idx) => (
+            <div className="work-item" key={idx}>
+              <div className="work-row">
+                <div>
+                  <h3>{item.jobTitle || item.role}</h3>
+                  <p className="section-text">{item.company}</p>
+                </div>
+                <div className="date-right">
+                  {item.startDate} - {item.endDate}
+                </div>
+              </div>
+              <ul className="work-list"> {/* Added work-list class */}
+                {(Array.isArray(item.description)
+                  ? item.description
+                  : (item.description || "").split("\n")
+                ).map((point, i) => (
+                  <li key={i}>{point}</li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </section>
+      )}
+
       {projects.length > 0 && (
         <section>
           <SectionTitle>Projects</SectionTitle>
@@ -129,7 +146,7 @@ const Microsoft = forwardRef(({ data = {} }, ref) => {
                 </div>
               </div>
               <p className="project-tech">{proj.tech}</p>
-              <ul className="section-text">
+              <ul className="project-points"> {/* Added project-points class */}
                 {(Array.isArray(proj.description)
                   ? proj.description
                   : (proj.description || "").split("\n")
@@ -140,19 +157,22 @@ const Microsoft = forwardRef(({ data = {} }, ref) => {
         </section>
       )}
 
-      {education.length > 0 && (
+      {achievements?.length > 0 && (
         <section>
-          <SectionTitle>Education</SectionTitle>
-          {education.map((edu, idx) => (
-            <div key={idx} className="education-item">
-              <div className="education-row">
-                <p>{edu.degree}</p>
-                <span className="date-right">
-                  {formatDate(edu.startDate)} - {formatDate(edu.endDate) || "Present"}
-                </span>
+          <SectionTitle>Achievements</SectionTitle>
+          {achievements.map((ach, idx) => (
+            <div key={idx} className="achievement-item">
+              <div className="work-row">
+                <h3>{ach.title}</h3>
+                <span className="date-right">{formatDate(ach.Date)}</span>
               </div>
-              <p className="section-text">{edu.school}</p>
-              {edu.cgpa && <span className="section-text">CGPA: {edu.cgpa}</span>}
+              <ul className="achievement-item ul"> {/* Added class */}
+                {(ach.description || "")
+                  .split("\n")
+                  .map(line => line.trim())
+                  .filter(Boolean)
+                  .map((point, i) => <li key={i}>{point}</li>)}
+              </ul>
             </div>
           ))}
         </section>
@@ -172,38 +192,17 @@ const Microsoft = forwardRef(({ data = {} }, ref) => {
         </section>
       )}
 
-      {languages?.length > 0 && (
-        <section>
-          <SectionTitle>Languages</SectionTitle>
-          <ul>{languages.map((lang, idx) => <li key={idx}>{lang}</li>)}</ul>
-        </section>
-      )}
-
-      {achievements?.length > 0 && (
-        <section>
-          <SectionTitle>Achievements</SectionTitle>
-          {achievements.map((ach, idx) => (
-            <div key={idx} className="achievement-item">
-              <div className="work-row">
-                <h3>{ach.title}</h3>
-                <span className="date-right">{formatDate(ach.Date)}</span>
-              </div>
-              <ul>
-                {(ach.description || "")
-                  .split("\n")
-                  .map(line => line.trim())
-                  .filter(Boolean)
-                  .map((point, i) => <li key={i}>{point}</li>)}
-              </ul>
-            </div>
-          ))}
-        </section>
-      )}
-
       {interests?.length > 0 && (
         <section>
           <SectionTitle>Interests</SectionTitle>
-          <ul className="section-text">{interests.map((interest, idx) => <li key={idx}>{interest}</li>)}</ul>
+          <ul className="list-style">{interests.map((interest, idx) => <li key={idx}>{interest}</li>)}</ul> {/* Added list-style class */}
+        </section>
+      )}
+
+      {languages?.length > 0 && (
+        <section>
+          <SectionTitle>Languages</SectionTitle>
+          <ul className="list-style">{languages.map((lang, idx) => <li key={idx}>{lang}</li>)}</ul> {/* Added list-style class */}
         </section>
       )}
     </div>

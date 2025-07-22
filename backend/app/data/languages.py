@@ -1,0 +1,76 @@
+LANGUAGES = [
+    # Popular Global Languages
+    "English",
+    "Spanish",
+    "French",
+    "German",
+    "Chinese (Mandarin)",
+    "Japanese",
+    "Hindi",
+    "Arabic",
+    "Portuguese",
+    "Russian",
+    "Italian",
+    "Korean",
+
+    # South Asian Languages
+    "Bengali",
+    "Urdu",
+    "Tamil",
+    "Telugu",
+    "Marathi",
+    "Gujarati",
+    "Punjabi",
+    "Kannada",
+    "Malayalam",
+    "Odia",
+    "Assamese",
+    "Nepali",
+    "Sinhala",
+    "Pashto",
+
+    # Southeast & East Asian Languages
+    "Vietnamese",
+    "Thai",
+    "Indonesian",
+    "Filipino (Tagalog)",
+    "Burmese",
+    "Lao",
+    "Khmer (Cambodian)",
+    "Mongolian",
+
+    # African Languages
+    "Swahili",
+    "Zulu",
+    "Xhosa",
+    "Amharic",
+    "Yoruba",
+    "Igbo",
+    "Hausa",
+
+    # European Languages
+    "Dutch",
+    "Greek",
+    "Polish",
+    "Turkish",
+    "Czech",
+    "Hungarian",
+    "Swedish",
+    "Norwegian",
+    "Danish",
+    "Finnish",
+    "Romanian",
+    "Slovak",
+    "Serbian",
+    "Croatian",
+    "Ukrainian",
+    "Bulgarian",
+    "Hebrew",
+
+    # Indigenous and Others
+    "Maori",
+    "Sanskrit",
+    "Tibetan",
+    "Latin",
+    "Esperanto"
+]

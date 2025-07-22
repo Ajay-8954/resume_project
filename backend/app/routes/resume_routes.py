@@ -10,6 +10,8 @@ from app.models.resume import Resume
 from bson import ObjectId
 from flask_cors import CORS  # ✅ Make sure this is imported
 from app.data.skills_data import ALL_SKILLS
+from app.data.interests import INTERESTS
+from app.data.languages import LANGUAGES
 from playwright.sync_api import sync_playwright
 from app.data.domain_mapping import DOMAIN_KEYWORDS  # <-- import here
 import json
@@ -41,6 +43,32 @@ resume_bp = Blueprint('resume', __name__)
 
 CORS(resume_bp, origins=["http://localhost:5173"], methods=["GET", "POST", "PUT", "DELETE"], supports_credentials=True)
 
+
+@resume_bp.route("/suggest-interests", methods=["POST"])
+def suggest_interests():
+    data = request.json
+    prefix = data.get("prefix", "").lower()
+    existing_interests = set(i.lower() for i in data.get("interests", []))
+
+    suggestions = [
+        interest for interest in INTERESTS
+        if interest.lower().startswith(prefix) and interest.lower() not in existing_interests
+    ]
+
+    return jsonify({"suggestions": sorted(suggestions)[:15]})
+
+@resume_bp.route("/suggest-languages", methods=["POST"])
+def suggest_languages():
+    data = request.json
+    prefix = data.get("prefix", "").lower()
+    existing_languages = set(l.lower() for l in data.get("languages", []))
+
+    suggestions = [
+        language for language in LANGUAGES
+        if language.lower().startswith(prefix) and language.lower() not in existing_languages
+    ]
+
+    return jsonify({"suggestions": sorted(suggestions)[:15]})
 
 @resume_bp.route('/update/<resume_id>', methods=['PUT'])
 @token_required
@@ -405,6 +433,7 @@ def extract_resume():
                 {{
                     "degree": "Degree Name",
                     "school": "School Name",
+                    "level": "type of education level",
                     "startDate": "Year",
                     "endDate": "Year",
                     "cgpa": "X.XX/10"  
