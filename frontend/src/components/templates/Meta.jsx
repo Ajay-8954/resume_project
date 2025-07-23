@@ -41,7 +41,7 @@ const Meta = forwardRef(({ data = {} }, ref) => {
         <div className="meta-contact">
           {phone && <span>{phone}</span>} | 
           {email && <span>{email}</span>} | 
-          {location && <span>{location}</span>}
+          {location && <span className="info-location">{location}</span>}
         </div>
         <div className="meta-links">
           {linkedin && (
@@ -79,7 +79,7 @@ const Meta = forwardRef(({ data = {} }, ref) => {
           {education.map((edu, i) => (
             <div key={i} className="meta-item">
               <div className="meta-flex">
-                <strong>
+                <strong className="info-capital">
                   {edu.degree} - {edu.school}
                 </strong>
                 <strong className="meta-dates">
@@ -96,7 +96,7 @@ const Meta = forwardRef(({ data = {} }, ref) => {
       {skills?.length > 0 && (
         <section className="meta-section">
           <h2 className="meta-section-heading">SKILLS</h2>
-          <div className="meta-list">{skills.join(" | ")}</div>
+          <div className="meta-list info-skill">{skills.join(" | ")}</div>
         </section>
       )}
 
@@ -107,7 +107,7 @@ const Meta = forwardRef(({ data = {} }, ref) => {
           {internships.map((item, i) => (
             <div key={i} className="meta-item">
               <div className="meta-flex">
-                <strong>
+                <strong className="info-internship">
                   <i>{item.jobTitle || item.role}</i> - {item.company}
                 </strong>
                 <strong className="meta-dates">
@@ -135,7 +135,7 @@ const Meta = forwardRef(({ data = {} }, ref) => {
           {experience.map((item, i) => (
             <div key={i} className="meta-item">
               <div className="meta-flex">
-                <strong>
+                <strong className="info-internship">
                   <i>{item.jobTitle || item.role}</i> - {item.company}
                 </strong>
                 <strong className="meta-dates">
@@ -164,7 +164,7 @@ const Meta = forwardRef(({ data = {} }, ref) => {
           {projects.map((proj, i) => (
             <div key={i} className="meta-item">
               <div className="meta-flex">
-                <strong>{proj.title}</strong>
+                <strong className="info-project">{proj.title}</strong>
                 <strong className="meta-dates">
                   {proj.startDate} - {proj.endDate}
                 </strong>
@@ -228,7 +228,7 @@ const Meta = forwardRef(({ data = {} }, ref) => {
           <h2 className="meta-section-heading">INTERESTS AND HOBBIES</h2>
           <ul className="meta-bullets">
             {interests.map((interest, i) => (
-              <li key={i}>{interest}</li>
+              <li key={i} className="info-language">{interest}</li>
             ))}
           </ul>
         </section>
@@ -237,7 +237,7 @@ const Meta = forwardRef(({ data = {} }, ref) => {
        {languages?.length > 0 && (
         <section className="meta-section">
           <h2 className="meta-section-heading">LANGUAGES</h2>
-          <ul className="meta-bullets">
+          <ul className="meta-bullets info-language">
             {languages.map((lang, i) => (
               <li key={i}>{lang}</li>
             ))}

@@ -757,6 +757,35 @@ body {
   width: 100%;
 }
 
+.info-location{
+   text-transform: capitalize;
+}
+
+.info-capital{
+  text-transform: capitalize;
+}
+
+.info-skill{
+  text-transform: capitalize;
+}
+
+.info-language{
+  text-transform : capitalize;
+}
+
+.info-interest{
+  text-transform: capitalize;
+}
+
+.info-project{
+  text-transform: capitalize;
+}
+
+.info-internship{
+  text-transform: capitalize;
+}
+
+
 @media print {
   body, html {
     width: 210mm;
@@ -839,6 +868,36 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+/* new added */
+.info-location{
+    text-transform: capitalize;
+}
+
+
+.info-capital{
+  text-transform: capitalize;
+}
+
+.info-skill{
+  text-transform : capitalize;
+}
+
+.info-language{
+  text-transform : capitalize;
+}
+
+.info-interest{
+  text-transform: capitalize;
+}
+
+.info-project{
+  text-transform: capitalize;
+}
+
+.info-internship{
+  text-transform: capitalize;
 }
 
                 """)
@@ -1029,6 +1088,35 @@ body {
   .section-title h2 {
     color: #2563eb !important;
   }
+  
+  .info-location{
+   text-transform: capitalize;
+}
+
+.info-capital{
+  text-transform: capitalize;
+}
+
+.info-skill{
+  text-transform: capitalize;
+}
+
+.info-language{
+  text-transform : capitalize;
+}
+
+.info-interest{
+  text-transform: capitalize;
+}
+
+.info-project{
+  text-transform: capitalize;
+}
+
+.info-internship{
+  text-transform: capitalize;
+}
+
 }
 
         }

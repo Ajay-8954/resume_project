@@ -1,7 +1,16 @@
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { Download, Edit2, Trash2, PlusCircle, Check, X } from "lucide-react";
+import {
+  Download,
+  Edit2,
+  Trash2,
+  PlusCircle,
+  Check,
+  X,
+  Sparkles,
+  PenTool,
+} from "lucide-react";
 
 // Import your template components
 import Google from "./templates/Google";
@@ -37,14 +46,31 @@ const Dashboard = () => {
           resume._id === resumeId ? { ...resume, title: newTitle } : resume
         )
       );
-      setToast({ message: "Title updated successfully", type: "success", visible: true });
-      setTimeout(() => setToast({ message: "", type: "", visible: false }), 3000);
+      setToast({
+        message: "Title updated successfully",
+        type: "success",
+        visible: true,
+      });
+      setTimeout(
+        () => setToast({ message: "", type: "", visible: false }),
+        3000
+      );
       setEditingResumeId(null);
       setNewTitle("");
     } catch (err) {
-      console.error("Failed to update title:", err.response?.data || err.message);
-      setToast({ message: "Failed to update title", type: "error", visible: true });
-      setTimeout(() => setToast({ message: "", type: "", visible: false }), 3000);
+      console.error(
+        "Failed to update title:",
+        err.response?.data || err.message
+      );
+      setToast({
+        message: "Failed to update title",
+        type: "error",
+        visible: true,
+      });
+      setTimeout(
+        () => setToast({ message: "", type: "", visible: false }),
+        3000
+      );
     }
   };
 
@@ -66,7 +92,9 @@ const Dashboard = () => {
       default:
         return (
           <div className="text-center text-gray-500 py-10 px-4">
-            {templateId ? `Template "${templateId}" not supported` : "Template not specified"}
+            {templateId
+              ? `Template "${templateId}" not supported`
+              : "Template not specified"}
           </div>
         );
     }
@@ -74,9 +102,12 @@ const Dashboard = () => {
 
   const fetchUserData = async () => {
     try {
-      const response = await axios.get("http://localhost:5000/api/auth/validate", {
-        withCredentials: true,
-      });
+      const response = await axios.get(
+        "http://localhost:5000/api/auth/validate",
+        {
+          withCredentials: true,
+        }
+      );
       setUser(response.data.user);
     } catch (err) {
       console.error("Failed to validate user:", err);
@@ -99,30 +130,19 @@ const Dashboard = () => {
     }
   };
 
-  const handleEditNavigation = (resumeId, templateId) => {
-    console.log(`Action: Navigating to edit resume ID: ${resumeId}`);
-    const resumeToEdit = resumes.find((r) => r._id === resumeId);
-    if (resumeToEdit) {
-      navigate(`/builder/${templateId}`, {
-        state: {
-          content: resumeToEdit.content,
-          resumeId: resumeId,
-        },
-      });
-    } else {
-      console.error(`Resume with ID ${resumeId} not found in state.`);
-      alert("Could not find resume details to edit.");
-    }
-  };
-
-  const handleDownload = (resumeId, resumeTitle, templateId) => {
-    console.log(`Action: Download resume ID: ${resumeId}`);
-    alert(`Downloading resume "${resumeTitle}" (functionality not yet implemented).`);
-  };
-
   const handleCreateNew = () => {
     console.log("Action: Navigate to create new resume.");
-    navigate("/resume-builder");
+    navigate("/resume-builder", {
+      state: {
+        content: {},
+        resumeId: null,
+      },
+    });
+  };
+
+  const handleAnalyzeScore = () => {
+    console.log("Action :navigate to analyze resume.");
+    navigate("/analyze");
   };
 
   const handleSelect = (resume) => {
@@ -183,26 +203,41 @@ const Dashboard = () => {
         {/* Header Section */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 md:mb-12 border-b-2 border-gray-200 pb-6">
           <div className="mb-6 md:mb-0">
-            <h1 className="text-4xl font-extrabold mb-1 text-gray-900">
+            <h1 className="text-3xl md:text-4xl font-extrabold mb-1 text-gray-900">
               Hello, {user.username}!
             </h1>
-            <p className="text-xl text-gray-600">
+            <p className="text-lg md:text-xl text-gray-600">
               Manage your professional profiles here.
             </p>
           </div>
-          <button
-            onClick={handleCreateNew}
-            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white font-bold rounded-lg shadow-lg hover:from-green-600 hover:to-green-700 transition-all duration-300 ease-in-out focus:outline-none focus:ring-4 focus:ring-green-400 focus:ring-opacity-75 transform hover:-translate-y-1"
-            aria-label="Create New Resume"
-          >
-            <PlusCircle size={24} />
-            <span className="text-lg">Create New Resume</span>
-          </button>
+          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+            <button
+              onClick={handleCreateNew}
+              className="group flex items-center justify-center px-6 py-3 text-white bg-blue-500 hover:bg-purple-400 rounded-lg text-lg font-semibold shadow-lg shadow-blue-500/30 transition-all duration-300 transform hover:scale-[1.03] active:scale-[0.98]"
+              aria-label="Create New Resume"
+            >
+              <PenTool
+                    className="mr-2 transition-transform duration-300 group-hover:rotate-12"
+                    size={20}
+                  />
+              <span>Create New Resume</span>
+            </button>
+            <button
+              onClick={handleAnalyzeScore}
+              className="group flex items-center justify-center px-6 py-3 border border-slate-300 text-slate-700 bg-green-400 hover:bg-slate-400 rounded-lg text-lg font-semibold shadow-sm transition-all duration-300 transform hover:scale-[1.03] active:scale-[0.98]"
+              aria-label="Analyze Score"
+            >
+              <Sparkles size={20} className="sm:w-6 sm:h-6" />
+              <span>Analyze Score</span>
+            </button>
+          </div>
         </div>
 
         {/* Your Resumes Section */}
         <section>
-          <h2 className="text-3xl font-bold mb-6 text-gray-800">Your Resumes</h2>
+          <h2 className="text-3xl font-bold mb-6 text-gray-800">
+            Your Resumes
+          </h2>
 
           {loadingResumes ? (
             <div className="flex flex-col items-center justify-center py-20 space-y-4">
@@ -319,7 +354,8 @@ const Dashboard = () => {
                       <p className="text-sm text-gray-500">
                         Template:{" "}
                         {resume.template
-                          ? resume.template.charAt(0).toUpperCase() + resume.template.slice(1)
+                          ? resume.template.charAt(0).toUpperCase() +
+                            resume.template.slice(1)
                           : "N/A"}
                       </p>
                       <div className="flex gap-3">

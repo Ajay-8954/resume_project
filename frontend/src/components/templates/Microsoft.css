@@ -44,6 +44,36 @@ body {
   margin-right: 11.5px;
 }
 
+
+/* new added */
+
+.info-location{
+    text-transform: capitalize;
+}
+
+.info-capital{
+  text-transform: capitalize;
+}
+
+.info-skill{
+  text-transform: capitalize;
+}
+
+.info-languages{
+  text-transform : capitalize;
+}
+
+.info-interest{
+  text-transform: capitalize;
+}
+
+.info-project{
+  text-transform: capitalize;
+}
+
+.info-internship{
+  text-transform: capitalize;
+}
 .section-title {
   display: flex;
   align-items: center;
@@ -66,6 +96,7 @@ body {
 
 .section-text {
   font-size: 0.75rem;
+
 }
 
 .work-item,

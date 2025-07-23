@@ -43,6 +43,37 @@ body {
   color: #444;
 }
 
+
+/* new added */
+.info-location{
+   text-transform: capitalize;
+}
+
+.info-capital{
+  text-transform: capitalize;
+}
+
+.info-skill{
+  text-transform: capitalize;
+}
+
+.info-language{
+  text-transform : capitalize;
+}
+
+.info-interest{
+  text-transform: capitalize;
+}
+
+.info-project{
+  text-transform: capitalize;
+}
+
+.info-internship{
+  text-transform: capitalize;
+}
+
+
 .section-t2 {
   margin-bottom: 12px;
 }

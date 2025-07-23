@@ -7,12 +7,43 @@
 .meta-name {
   font-size: 24px;
   text-align: center;
+  text-transform: uppercase;
 }
 
 .meta-contact,
 .meta-links {
   font-size: 10px;
   text-align: center;
+}
+
+/* new added */
+.info-location{
+    text-transform: capitalize;
+}
+
+
+.info-capital{
+  text-transform: capitalize;
+}
+
+.info-skill{
+  text-transform : capitalize;
+}
+
+.info-language{
+  text-transform : capitalize;
+}
+
+.info-interest{
+  text-transform: capitalize;
+}
+
+.info-project{
+  text-transform: capitalize;
+}
+
+.info-internship{
+  text-transform: capitalize;
 }
 
 .meta-section {

@@ -30,6 +30,7 @@ export default function TemplateBuilder({
     setResumeId,
     setDataToBuild,
     dataToBuild,
+    reset
   } = useResumeStore();
   const previewRef = useRef();
   const topRef = useRef();
@@ -76,6 +77,53 @@ export default function TemplateBuilder({
       });
     }
   }, [manualForm, setManualForm]);
+
+
+    // Initialize form based on navigation state
+  useEffect(() => {
+    const state = location.state || {};
+    console.log("Navigation state:", state);
+
+    if (!state.content && !resumeData && !dataToBuild) {
+      console.log("Resetting form for new resume");
+      reset(); // Reset the entire store, including manualForm
+      setTitle("Untitled Resume");
+    } else if (state.content || resumeData) {
+      console.log("Populating form with existing data");
+      const data = state.content || resumeData || {};
+      setManualForm({
+        Name: data.Name || "",
+        jobTitle: data.jobTitle || "",
+        email: data.email || "",
+        phone: data.phone || "",
+        location: data.location || "",
+        linkedin: data.linkedin || "",
+        github: data.github || "",
+        summary: data.summary || "",
+        objective: data.objective || "",
+        experience: data.experience || [],
+        education: data.education || [],
+        projects: data.projects || [],
+        skills: data.skills || [],
+        languages: data.languages || [],
+        interests: data.interests || [],
+        achievements: data.achievements || [],
+        internships: data.internships || [],
+        certifications: data.certifications || [],
+        newExperience: data.newExperience || { jobTitle: "", company: "", startDate: "", endDate: "", description: "" },
+        newEducation: data.newEducation || { degree: "", school: "", startDate: "", endDate: "" },
+        newProject: data.newProject || { title: "", startDate: "", endDate: "", tech: "", description: "" },
+        newAchievement: data.newAchievement || { title: "", description: "" },
+        newInternship: data.newInternship || { role: "", company: "", startDate: "", endDate: "", description: "" },
+        newCertification: data.newCertification || { name: "", issuer: "", date: "" },
+      });
+      setTitle(data.Name ? `${data.Name}'s Resume` : "Untitled Resume");
+      if (state.resumeId || resumeId) {
+        setResumeId(state.resumeId || resumeId);
+      }
+    }
+  }, [location.state, resumeData, resumeId, setManualForm, setResumeId, reset]);
+
 
   // Handle dataToBuild for populating form
   useEffect(() => {

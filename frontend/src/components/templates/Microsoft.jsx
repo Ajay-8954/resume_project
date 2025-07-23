@@ -52,7 +52,8 @@ const Microsoft = forwardRef(({ data = {} }, ref) => {
           <span>♦</span>
           <span className="info">{email}</span>
           <span>♦</span>
-          <span className="info">{location}</span>
+          {/* new class added */}
+          <span className="info-location">{location}</span>
         </p>
       </header>
 
@@ -81,7 +82,7 @@ const Microsoft = forwardRef(({ data = {} }, ref) => {
                   {formatDate(edu.startDate)} - {formatDate(edu.endDate) || "Present"}
                 </span>
               </div>
-              <p className="section-text">{edu.school}</p>
+              <p className="section-text info-capital">{edu.school}</p>
               {edu.cgpa && <span className="section-text">CGPA: {edu.cgpa}</span>}
             </div>
           ))}
@@ -91,7 +92,7 @@ const Microsoft = forwardRef(({ data = {} }, ref) => {
       {skills.length > 0 && (
         <section>
           <SectionTitle>Skills</SectionTitle>
-          <div className="skills-grid">
+          <div className="skills-grid info-skill">
             {(() => {
               const mid = Math.ceil(skills.length / 2);
               const col1 = skills.slice(0, mid);
@@ -107,25 +108,25 @@ const Microsoft = forwardRef(({ data = {} }, ref) => {
         </section>
       )}
 
-      {workItems.length > 0 && (
+   {experience.length > 0 && (
         <section>
-          <SectionTitle>{workTitle}</SectionTitle>
-          {workItems.map((item, idx) => (
+          <SectionTitle>Work History</SectionTitle>
+          {experience.map((item, idx) => (
             <div className="work-item" key={idx}>
               <div className="work-row">
-                <div>
-                  <h3>{item.jobTitle || item.role}</h3>
+                <div className="info-internship">
+                  <h3 >{item.jobTitle}</h3>
                   <p className="section-text">{item.company}</p>
                 </div>
                 <div className="date-right">
-                  {item.startDate} - {item.endDate}
+                  {formatDate(item.startDate)} - {formatDate(item.endDate) || "Present"}
                 </div>
               </div>
-              <ul className="work-list"> {/* Added work-list class */}
+              <ul className="work-list">
                 {(Array.isArray(item.description)
                   ? item.description
                   : (item.description || "").split("\n")
-                ).map((point, i) => (
+                ).filter(Boolean).map((point, i) => (
                   <li key={i}>{point}</li>
                 ))}
               </ul>
@@ -134,13 +135,41 @@ const Microsoft = forwardRef(({ data = {} }, ref) => {
         </section>
       )}
 
+      {internships.length > 0 && (
+        <section>
+          <SectionTitle>Internships</SectionTitle>
+          {internships.map((item, idx) => (
+            <div className="work-item" key={idx}>
+              <div className="work-row">
+                <div className="info-internship">
+                  <h3>{item.role}</h3>
+                  <p className="section-text">{item.company}</p>
+                </div>
+                <div className="date-right">
+                  {formatDate(item.startDate)} - {formatDate(item.endDate) || "Present"}
+                </div>
+              </div>
+              <ul className="work-list">
+                {(Array.isArray(item.description)
+                  ? item.description
+                  : (item.description || "").split("\n")
+                ).filter(Boolean).map((point, i) => (
+                  <li key={i}>{point}</li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </section>
+      )}
+
+
       {projects.length > 0 && (
         <section>
           <SectionTitle>Projects</SectionTitle>
           {projects.map((proj, idx) => (
             <div className="project-item" key={idx}>
               <div className="project-row">
-                <h3>{proj.title}</h3>
+                <h3 className="info-project">{proj.title}</h3>
                 <div className="date-right">
                   {formatDate(proj.startDate)} - {formatDate(proj.endDate)}
                 </div>
@@ -195,14 +224,14 @@ const Microsoft = forwardRef(({ data = {} }, ref) => {
       {interests?.length > 0 && (
         <section>
           <SectionTitle>Interests</SectionTitle>
-          <ul className="list-style">{interests.map((interest, idx) => <li key={idx}>{interest}</li>)}</ul> {/* Added list-style class */}
+          <ul className="list-style">{interests.map((interest, idx) => <li key={idx} className="info-interest">{interest}</li>)}</ul> {/* Added list-style class */}
         </section>
       )}
 
       {languages?.length > 0 && (
         <section>
           <SectionTitle>Languages</SectionTitle>
-          <ul className="list-style">{languages.map((lang, idx) => <li key={idx}>{lang}</li>)}</ul> {/* Added list-style class */}
+          <ul className="list-style ">{languages.map((lang, idx) => <li key={idx} className="info-languages">{lang}</li>)}</ul> {/* Added list-style class */}
         </section>
       )}
     </div>

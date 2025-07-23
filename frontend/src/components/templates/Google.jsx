@@ -17,6 +17,7 @@ const Google = forwardRef(({ data = {} }, ref) => {
     jobTitle = "Product Manager",
     email = "jennifer@jobscan.co",
     phone = "(123) 456-7890",
+    location="",
     linkedin,
     github,
     summary = "",
@@ -58,6 +59,10 @@ const Google = forwardRef(({ data = {} }, ref) => {
               Github
             </a>
           )}
+
+             <span className="mr-2 info-location">
+            <strong>Location:</strong> {location}
+          </span>
         </div>
       </div>
 
@@ -92,7 +97,7 @@ const Google = forwardRef(({ data = {} }, ref) => {
             <div key={idx} className="item-t2 mt-1">
               <div className="flex justify-between items-baseline">
                 <div>
-                  <p className="font-semibold text-[11px]">{edu.school}</p>
+                  <p className="font-semibold text-[11px] info-capital">{edu.school}</p>
                   <p className="text-[10px]">{edu.degree}</p>
                 </div>
                 <p className="text-gray-700 text-[10px]">
@@ -113,7 +118,7 @@ const Google = forwardRef(({ data = {} }, ref) => {
           </h2>
           <ul className="grid grid-cols-2 gap-1 list-disc list-inside pl-5">
             {skills.map((skill, idx) => (
-              <li key={idx} className="text-[10px]">{skill}</li>
+              <li key={idx} className="text-[10px] info-skill">{skill}</li>
             ))}
           </ul>
         </section>
@@ -129,8 +134,8 @@ const Google = forwardRef(({ data = {} }, ref) => {
             <div key={idx} className="item-t2 mt-1">
               <div className="flex justify-between items-baseline">
                 <div>
-                  <p className="font-semibold text-[11px]">
-                    {item.company} - {item.jobTitle}
+                  <p className="font-semibold text-[11px] info-internship">
+                    {item.company} - {item.jobTitle || item.role}
                   </p>
                 </div>
                 <p className="text-gray-700 text-[10px]">
@@ -164,7 +169,7 @@ const Google = forwardRef(({ data = {} }, ref) => {
             <div key={idx} className="item-t2 mt-1">
               <div className="flex justify-between items-baseline">
                 <div>
-                  <p className="font-semibold text-[11px]">
+                  <p className="font-semibold text-[11px] info-internship">
                     {item.company} - {item.jobTitle}
                   </p>
                 </div>
@@ -200,7 +205,7 @@ const Google = forwardRef(({ data = {} }, ref) => {
             <div key={idx} className="item-t2 mt-1">
               <div className="flex justify-between items-baseline">
                 <div>
-                  <p className="font-semibold text-[11px]">
+                  <p className="font-semibold text-[11px] info-project">
                     {proj.title} - {proj.tech}
                   </p>
                 </div>
@@ -276,9 +281,9 @@ const Google = forwardRef(({ data = {} }, ref) => {
           <h2 className="section-title-t2 font-semibold border-b text-[13px]">
             INTERESTS
           </h2>
-          <ul className="list-disc list-inside ml-4 mt-1 text-[11px] space-y-0.5">
+          <ul className="list-disc list-inside ml-4 mt-1 text-[11px] space-y-0.5 info-interest">
             {interests.map((interest, idx) => (
-              <li key={idx}>{interest}</li>
+              <li key={idx} >{interest}</li>
             ))}
           </ul>
         </section>
@@ -291,7 +296,7 @@ const Google = forwardRef(({ data = {} }, ref) => {
           </h2>
           <ul className="list-disc list-inside ml-4 mt-1 space-y-0.5">
             {languages.map((lang, idx) => (
-              <li key={idx} className="text-[10px]">{lang}</li>
+              <li key={idx} className="text-[10px] info-language">{lang}</li>
             ))}
           </ul>
         </section>
