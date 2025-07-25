@@ -365,45 +365,94 @@ Now, generate the JSON object based on the provided text.
     
     
     
-@optimize_bp.route("/generate-summary", methods=["POST"])
-def generate_summary():
+    
+
+@optimize_bp.route("/generate-or-enhance-summary", methods=["POST"])
+def generate_or_enhance_summary():
     """
-    Generate a professional summary based on the user's experience and skills.
-    Expects a JSON payload with 'experience' and 'skills' fields.
-    Returns a JSON object with a 'summary' field containing the generated summary.
+    Generate or enhance a professional summary based on the user's input.
+    - If 'existingSummary' is provided, enhances only that text.
+    - If 'existingSummary' is empty, generates a new summary using 'experience', 'skills', and 'projects'.
+    Expects a JSON payload with 'existingSummary', 'experience', 'skills', and 'projects' fields.
+    Returns a JSON object with a 'summary' field containing the generated or enhanced summary.
     """
     data = request.get_json()
+    existing_summary = data.get('existingSummary', '').strip()
     experience = data.get('experience', [])
     skills = data.get('skills', [])
+    projects = data.get('projects', [])
 
-    if not experience and not skills:
-        return jsonify({"error": "At least one of experience or skills is required."}), 400
+    # Construct prompt based on whether existing_summary is provided
+    if existing_summary:
+        # Enhance mode: Only enhance the existing summary
+        prompt = f"""
+You are an expert Career Strategist tasked with enhancing an existing professional summary for a resume. The enhanced summary should refine the provided text, maintaining its core message and tone, to make it more polished, impactful, and professional. The summary must be 3-5 sentences long and suitable for a resume.
 
-    # Format experience for the prompt
-    formatted_experience = []
-    for exp in experience:
-        formatted_experience.append(
-            f"Role: {exp.get('role', '')}\n"
-            f"Company: {exp.get('company', '')}\n"
-            f"Duration: {exp.get('startDate', '')} - {exp.get('endDate', '')}\n"
-            f"Responsibilities: {exp.get('description', '')}\n"
-        )
-    
-    formatted_skills = ", ".join(skills) if skills else "None provided"
+**CONTEXT:**
+**Existing Summary:**
+{existing_summary}
 
-    prompt = f"""
-You are an expert Career Strategist tasked with generating a concise, impactful professional summary for a resume. The summary should highlight the candidate's experience and skills, tailored to a professional context. The summary must be 3-5 sentences long, professional, and aligned with the provided experience and skills.
+**REQUIREMENTS:**
+- Enhance the existing summary to be more concise, professional, and impactful.
+- Maintain the original message and tone, improving clarity and word choice.
+- Do not add new information beyond what is provided in the existing summary.
+- Keep it concise (3-5 sentences, max 150 words).
+- Use a professional tone suitable for a resume.
+- Return the result in JSON format with a single key: `summary`.
+
+**EXAMPLE OUTPUT:**
+{{
+  "summary": "Accomplished Software Engineer with over 5 years of experience, delivering high-quality web applications. Enhanced expertise in modern frameworks, driving system efficiency through scalable solutions."
+}}
+"""
+    else:
+        # Generate mode: Create a new summary using experience, skills, and projects
+        # Validate input
+        if not any([experience, skills, projects]):
+            return jsonify({"error": "At least one of experience, skills, or projects is required when generating a new summary."}), 400
+
+        # Format experience for the prompt
+        formatted_experience = []
+        for exp in experience:
+            formatted_experience.append(
+                f"Role: {exp.get('jobTitle', '')}\n"
+                f"Company: {exp.get('company', '')}\n"
+                f"Duration: {exp.get('startDate', '')} - {exp.get('endDate', 'Present')}\n"
+                f"Responsibilities: {exp.get('description', '')}\n"
+            )
+
+        # Format skills
+        formatted_skills = ", ".join(skills) if skills else "None provided"
+
+        # Format projects
+        formatted_projects = []
+        for proj in projects:
+            formatted_projects.append(
+                f"Project: {proj.get('title', '')}\n"
+                f"Duration: {proj.get('startDate', '')} - {proj.get('endDate', 'Present')}\n"
+                f"Description: {proj.get('description', '')}\n"
+                f"Technologies: {proj.get('tech', '')}\n"
+            )
+
+        prompt = f"""
+You are an expert Career Strategist tasked with generating a concise, impactful professional summary for a resume. The summary should highlight the candidate's experience, skills, and projects, tailored to a professional context. The summary must be 3-5 sentences long, professional, and aligned with the provided context.
 
 **CONTEXT:**
 **Experience:**
-{"".join(formatted_experience)}
+{"".join(formatted_experience) if formatted_experience else "None provided"}
+
 **Skills:**
 {formatted_skills}
 
+**Projects:**
+{"".join(formatted_projects) if formatted_projects else "None provided"}
+
 **REQUIREMENTS:**
-- Generate a professional summary that reflects the candidate's experience and skills.
+- Generate a professional summary that reflects the candidate's experience, skills, and projects.
 - Keep it concise (3-5 sentences, max 150 words).
 - Use a professional tone suitable for a resume.
+- Incorporate key achievements or responsibilities from experience and projects.
+- Highlight relevant skills to showcase expertise.
 - Return the result in JSON format with a single key: `summary`.
 
 **EXAMPLE OUTPUT:**
@@ -411,6 +460,7 @@ You are an expert Career Strategist tasked with generating a concise, impactful 
   "summary": "Results-driven Software Engineer with over 5 years of experience developing scalable web applications at leading tech firms. Proficient in Java, Python, and cloud technologies, with a proven track record of delivering high-impact projects that enhance system performance. Skilled in leading cross-functional teams to meet tight deadlines while maintaining code quality."
 }}
 """
+    
     try:
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -428,8 +478,12 @@ You are an expert Career Strategist tasked with generating a concise, impactful 
 
         return jsonify(summary_data)
         
+    except OpenAIError as e:
+        current_app.logger.error(f"OpenAI API error during summary generation/enhancement: {str(e)}")
+        return jsonify({"error": f"Failed to process summary: {str(e)}"}), 500
+    except json.JSONDecodeError as e:
+        current_app.logger.error(f"JSON parsing error: {str(e)}")
+        return jsonify({"error": "Invalid response format from AI model."}), 500
     except Exception as e:
-        current_app.logger.error(f"Professional summary generation failed: {str(e)}")
-        return jsonify({"error": f"Failed to generate summary: {str(e)}"}), 500   
-    
-
+        current_app.logger.error(f"Unexpected error during summary generation/enhancement: {str(e)}")
+        return jsonify({"error": f"Failed to process summary: {str(e)}"}), 500

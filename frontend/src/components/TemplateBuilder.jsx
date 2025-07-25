@@ -22,7 +22,10 @@ export default function TemplateBuilder({
   resumeData,
   resumeId,
 }) {
+  // Default template if none is selected
   const templateId = selectedTemplate || "microsoft";
+
+  // Access state and actions from useResumeStore
   const {
     manualForm,
     loading,
@@ -30,10 +33,14 @@ export default function TemplateBuilder({
     setResumeId,
     setDataToBuild,
     dataToBuild,
-    reset
+    reset,
   } = useResumeStore();
+
+  // Refs for preview and scrolling
   const previewRef = useRef();
   const topRef = useRef();
+
+  // Local state for UI
   const [title, setTitle] = useState("");
   const [currentStep, setCurrentStep] = useState(0);
   const [completedSteps, setCompletedSteps] = useState([]);
@@ -41,8 +48,10 @@ export default function TemplateBuilder({
   const [downloadLoading, setDownloadLoading] = useState(false);
   const [saveLoading, setSaveLoading] = useState(false);
 
+  // Required fields for step validation
   const requiredFields = ["Name", "email", "phone", "education"];
 
+  // Check if required fields are filled to enable step progression
   const checkRequiredFieldsFilled = () => {
     if (!manualForm) return false;
     return requiredFields.every((field) => {
@@ -52,9 +61,10 @@ export default function TemplateBuilder({
     });
   };
 
-  // Initialize manualForm with default structure if empty
+  // Initialize manualForm with default structure only on mount
   useEffect(() => {
-    if (!manualForm || !Object.keys(manualForm).length) {
+    // Since useResumeStore already initializes manualForm, we only need to ensure it's not null
+    if (!manualForm) {
       console.log("Initializing manualForm with default structure");
       setManualForm({
         Name: "",
@@ -65,6 +75,7 @@ export default function TemplateBuilder({
         linkedin: "",
         github: "",
         summary: "",
+        objective: "",
         experience: [],
         education: [],
         projects: [],
@@ -76,17 +87,24 @@ export default function TemplateBuilder({
         certifications: [],
       });
     }
-  }, [manualForm, setManualForm]);
+  }, [setManualForm]); // Remove manualForm from dependencies to prevent loop
 
-
-    // Initialize form based on navigation state
+  // Handle navigation state and initialize form
   useEffect(() => {
     const state = location.state || {};
     console.log("Navigation state:", state);
 
-    if (!state.content && !resumeData && !dataToBuild) {
+    // Reset manualForm only when explicitly creating a new resume
+    if (
+      !state.resumeId &&
+      !resumeId &&
+      !state.content &&
+      !resumeData &&
+      !dataToBuild &&
+      (!manualForm || !Object.keys(manualForm).length)
+    ) {
       console.log("Resetting form for new resume");
-      reset(); // Reset the entire store, including manualForm
+      reset(); // Reset store for new resume
       setTitle("Untitled Resume");
     } else if (state.content || resumeData) {
       console.log("Populating form with existing data");
@@ -122,10 +140,14 @@ export default function TemplateBuilder({
         setResumeId(state.resumeId || resumeId);
       }
     }
-  }, [location.state, resumeData, resumeId, setManualForm, setResumeId, reset]);
+  }, [location.state, resumeData, resumeId, setManualForm, setResumeId, reset, dataToBuild]);
 
+  // Debug manualForm changes
+  useEffect(() => {
+    console.log("Current manualForm:", JSON.stringify(manualForm, null, 2));
+  }, [manualForm]);
 
-  // Handle dataToBuild for populating form
+  // Merge dataToBuild with manualForm
   useEffect(() => {
     console.log(
       "BUILDER MOUNTED: Received dataToBuild:",
@@ -136,7 +158,7 @@ export default function TemplateBuilder({
       typeof dataToBuild === "object" &&
       Object.keys(dataToBuild).length > 0
     ) {
-      console.log("Setting form with dataToBuild...");
+      console.log("Merging form with dataToBuild...");
       setManualForm((prev) => ({
         ...prev,
         ...dataToBuild,
@@ -150,15 +172,15 @@ export default function TemplateBuilder({
         internships: dataToBuild.internships || prev.internships || [],
         certifications: dataToBuild.certifications || prev.certifications || [],
       }));
-      // if (dataToBuild.Name) {
-      //   setTitle(`${dataToBuild.Name}'s Resume`);
-      // }
+      if (dataToBuild.Name && !title) {
+        setTitle(`${dataToBuild.Name}'s Resume`);
+      }
     } else {
       console.log(
         "No valid dataToBuild found. Form will use default or existing data."
       );
     }
-  }, [dataToBuild, setManualForm]);
+  }, [dataToBuild, setManualForm, title]);
 
   // Cleanup dataToBuild on unmount
   useEffect(() => {
@@ -168,11 +190,11 @@ export default function TemplateBuilder({
     };
   }, [setDataToBuild]);
 
-  // Handle resumeData for existing resumes
+  // Merge resumeData with manualForm for existing resumes
   useEffect(() => {
     if (resumeData && Object.keys(resumeData).length > 0) {
       console.log(
-        "Initializing form with resumeData:",
+        "Merging form with resumeData:",
         JSON.stringify(resumeData, null, 2)
       );
       setManualForm((prev) => ({
@@ -188,24 +210,25 @@ export default function TemplateBuilder({
         internships: resumeData.internships || prev.internships || [],
         certifications: resumeData.certifications || prev.certifications || [],
       }));
-      // setTitle(
-      //   resumeData.Name ? `${resumeData.Name}'s Resume` : "Untitled Resume"
-      // );
+      if (resumeData.Name && !title) {
+        setTitle(`${resumeData.Name}'s Resume`);
+      }
     }
     if (resumeId) {
       setResumeId(resumeId);
     }
-  }, [resumeData, resumeId, setManualForm, setResumeId]);
+  }, [resumeData, resumeId, setManualForm, setResumeId, title]);
 
-  // Step 1: Template selected
+  // Update step when template is selected
   useEffect(() => {
     if (templateId) {
+      console.log("Template changed:", templateId);
       setCurrentStep(1);
       setCompletedSteps([1]);
     }
   }, [templateId]);
 
-  // Step 2: Resume filled
+  // Update step when required fields are filled
   useEffect(() => {
     const isFilled = checkRequiredFieldsFilled();
     if (templateId && isFilled) {
@@ -217,6 +240,7 @@ export default function TemplateBuilder({
     }
   }, [manualForm, templateId, currentStep]);
 
+  // Handle step navigation
   const handleStepClick = (step) => {
     setCurrentStep(step);
     topRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -227,7 +251,7 @@ export default function TemplateBuilder({
 
   // Handle PDF download
   const handleDownloadPDF = async () => {
-    setDownloadLoading(true); // Set download loading to true
+    setDownloadLoading(true);
     try {
       let bodyContent = previewRef.current.innerHTML;
       console.log("Raw HTML from previewRef:", bodyContent);
@@ -255,7 +279,7 @@ export default function TemplateBuilder({
       console.error("PDF generation error:", error);
       alert("PDF generation failed: " + error.message);
     } finally {
-      setDownloadLoading(false); // Reset download loading
+      setDownloadLoading(false);
     }
   };
 
@@ -329,6 +353,7 @@ export default function TemplateBuilder({
     }
   };
 
+  // Render preview based on selected template
   const renderPreview = () => {
     const props = {
       data:
@@ -424,7 +449,7 @@ export default function TemplateBuilder({
 
       {/* Main Layout */}
       <div className="flex flex-grow">
-        <div className="w-55 min-w-[18px] border-r border-blue-100 bg-white shadow-md sticky top-0 h-screen">
+        <div className="w-55 min-w-[240px] border-r border-blue-100 bg-white shadow-md sticky top-0 h-screen">
           <TemplateSelection />
         </div>
         <div className="flex flex-col lg:flex-row gap-2 px-2 py-1 w-full max-w-[calc(100%-240px)] mx-auto">
@@ -443,7 +468,7 @@ export default function TemplateBuilder({
               <div className="flex items-center gap-4 flex-1">
                 <button
                   onClick={handleDownloadPDF}
-                  className=" flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={downloadLoading}
                 >
                   {downloadLoading ? (
@@ -479,7 +504,7 @@ export default function TemplateBuilder({
                 </button>
                 <button
                   onClick={saveResume}
-                  className=" flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={saveLoading}
                 >
                   {saveLoading ? (

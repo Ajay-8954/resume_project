@@ -139,27 +139,6 @@ export default function ResumeForm() {
     }
   };
 
-  const generateProfessionalSummary = async () => {
-    setIsGenerating(true);
-    try {
-      const response = await fetch("http://localhost:5000/generate-summary", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          experience: manualForm.experience || [],
-          skills: manualForm.skills || [],
-        }),
-      });
-      const data = await response.json();
-      if (data.summary) {
-        handleFieldChange("summary", data.summary);
-      }
-    } catch (error) {
-      alert("Error generating summary: " + error.message);
-    } finally {
-      setIsGenerating(false);
-    }
-  };
 
   const fetchSkillSuggestions = async (input) => {
     try {
@@ -249,7 +228,14 @@ export default function ResumeForm() {
       // Update the form state
       setManualForm(transformedData);
       console.log("Updated manualForm:", transformedData);
-    } catch (err) {
+
+        // Auto-toggle to "experienced" if experience data exists and is non-empty
+    if (transformedData.experience && transformedData.experience.length > 0) {
+      setToggle("experienced");
+    } else {
+      setToggle("fresher"); // Optional: Explicitly set to fresher if no experience
+    }
+  } catch (err) {
       console.error("Upload error:", err);
       alert(`Error: ${err.message || "Failed to process resume"}`);
     } finally {
@@ -990,67 +976,87 @@ export default function ResumeForm() {
       <div className="border-t border-gray-300 my-4"></div>
 
       {/* Professional Summary (for Experienced) */}
-      {toggle === "experienced" && (
-        <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xl font-semibold text-gray-700">
-              Professional Summary
-            </h2>
-
-            <button
-              onClick={generateProfessionalSummary}
-              disabled={isGenerating}
-              className={`flex items-center gap-2 px-3 py-1 rounded-md text-sm ${
-                isGenerating
-                  ? "bg-gray-200"
-                  : "bg-green-100 hover:bg-green-200 text-green-800"
-              }`}
+    {toggle === "experienced" && (
+  <div className="space-y-4">
+    <div className="flex justify-between items-center">
+      <h2 className="text-xl font-semibold text-gray-700">
+        Professional Summary
+      </h2>
+      <button
+        onClick={async () => {
+          setIsGenerating(true);
+          try {
+            const response = await fetch("http://localhost:5000/generate-or-enhance-summary", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                existingSummary: manualForm.summary || "",
+                experience: manualForm.experience || [],
+                skills: manualForm.skills || [],
+                projects: manualForm.projects || [], // Include projects
+              }),
+            });
+            const data = await response.json();
+            if (data.summary) {
+              handleFieldChange("summary", data.summary);
+            } else {
+              alert("Error: No summary returned from the server.");
+            }
+          } catch (error) {
+            alert("Error processing summary: " + error.message);
+          } finally {
+            setIsGenerating(false);
+          }
+        }}
+        disabled={isGenerating}
+        className={`flex items-center gap-2 px-3 py-1 rounded-md text-sm ${
+          isGenerating
+            ? "bg-gray-200 cursor-not-allowed"
+            : "bg-blue-100 hover:bg-blue-200 text-blue-800"
+        }`}
+      >
+        {isGenerating ? (
+          <>
+            <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+              <circle
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                fill="none"
+                strokeWidth="4"
+              />
+            </svg>
+            {manualForm.summary ? "Enhancing..." : "Generating..."}
+          </>
+        ) : (
+          <>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-4 w-4"
+              viewBox="0 0 20 20"
+              fill="currentColor"
             >
-              {isGenerating ? (
-                <>
-                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                    <circle
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      fill="none"
-                      strokeWidth="4"
-                    />
-                  </svg>
-                  Generating...
-                </>
-              ) : (
-                "✨ Generate with AI"
-              )}
-            </button>
-
-            <button
-              className="bg-blue-50 text-blue-600 px-3 py-1 rounded-md text-sm hover:bg-blue-100 transition-colors"
-              onClick={async () => {
-                if (!manualForm.summary?.trim()) {
-                  alert("Please enter some text first");
-                  return;
-                }
-                const enhanced = await enhanceField(
-                  "summary",
-                  manualForm.summary
-                );
-                handleFieldChange("summary", enhanced);
-              }}
-            >
-              Enhance with AI
-            </button>
-          </div>
-          <textarea
-            rows={4}
-            className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-300 outline-none"
-            value={manualForm.summary || ""}
-            onChange={(e) => handleFieldChange("summary", e.target.value)}
-            placeholder="A brief summary about your professional background..."
-          />
-        </div>
-      )}
+              <path
+                fillRule="evenodd"
+                d="M12.316 3.051a1 1 0 01.633 1.265l-4 12a1 1 0 11-1.898-.632l4-12a1 1 0 011.265-.633zM5.707 6.293a1 1 0 010 1.414L3.414 10l2.293 2.293a1 1 0 11-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0zm8.586 0a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 11-1.414-1.414L16.586 10l-2.293-2.293a1 1 0 010-1.414z"
+                clipRule="evenodd"
+              />
+            </svg>
+            {manualForm.summary ? "Enhance with AI" : "Generate with AI"}
+          </>
+        )}
+      </button>
+    </div>
+    <textarea
+      rows={4}
+      className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-300 outline-none"
+      value={manualForm.summary || ""}
+      onChange={(e) => handleFieldChange("summary", e.target.value)}
+      placeholder="A brief summary about your professional background..."
+    />
+  </div>
+)}
 
       {/* Experience Section */}
       {/* Experience Section - Only shown for experienced candidates */}
@@ -2723,11 +2729,11 @@ export default function ResumeForm() {
                     }
                     required
                   />
-                  {!cert.date && (
+                  {/* {!cert.date && (
                     <p className="text-red-500 text-xs mt-1">
                       Date is required
                     </p>
-                  )}
+                  )} */}
                 </div>
               </div>
 

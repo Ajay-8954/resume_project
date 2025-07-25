@@ -182,9 +182,10 @@ Company: {context.get('company', '')}
         
 Please:
 1. Use strong action verbs (e.g., "Developed", "Led", "Implemented")
-2. Quantify achievements where possible
-3. Keep it concise (2-3 bullet points)
-4. Make it more professional and impactful
+2. Quantify achievements only if the input contains specific metrics
+3. Use the bullet point character '•' for all bullet points
+4. Keep it concise (2-3 bullet points)
+5. Make it more professional and impactful
         
 Return only the enhanced description without any additional text.""",
         
@@ -199,6 +200,7 @@ Please:
 2. Showcase specific contributions
 3. Use bullet points if not already
 4. Keep it professional and concise
+5. Use the bullet point character '•' for all bullet points
         
 Return only the enhanced description.""",
         
@@ -208,10 +210,11 @@ Achievement: {context.get('title', '')}
 Current description: {text}
         
 Please:
-1. Make it more impactful and measurable
-2. Highlight the significance
-3. Keep it concise (1-2 sentences)
-4. Use professional language
+1. Make it more impactful
+2. Quantify achievements only if the input contains specific metrics
+3. Use the bullet point character '•' if using bullet points
+4. Keep it concise (1-2 sentences or bullet points)
+5. Use professional language
         
 Return only the enhanced description.""",
         
@@ -228,6 +231,36 @@ Please:
 4. Make it more compelling
         
 Return only the enhanced summary.""",
+
+
+ 
+ "internship": f"""Enhance this internship description for a resume:
+ 
+Current description: {text}
+Role: {context.get('role', '')}
+Company: {context.get('company', '')}
+ 
+Please:
+1. Use action verbs to highlight contributions
+2. Emphasize skills developed
+3. Use the bullet point character '•' for all bullet points
+4. Quantify achievements only if the input contains specific metrics
+5. Keep it concise (2-3 bullet points)
+6. Make it professional
+ 
+Return only the enhanced description.""",
+ 
+ "default": f"""Improve this text for a professional resume:
+ 
+{text}
+ 
+Please:
+1. Make it more concise, professional, and impactful
+2. Use the bullet point character '•' if using bullet points
+3. Quantify achievements only if the input contains specific metrics
+4. Preserve the original meaning
+ 
+Return only the enhanced text.""",
         
         "default": f"""Improve this text for a professional resume:
         
@@ -248,6 +281,9 @@ Please make it more concise, professional and impactful while preserving the ori
         )
         
         enhanced_text = response.choices[0].message.content.strip()
+        
+         # Post-process to replace common bullet characters with '•'
+        enhanced_text = enhanced_text.replace('- ', '• ').replace('* ', '• ')
         return jsonify({"enhancedText": enhanced_text})
         
     except Exception as e:
@@ -390,8 +426,8 @@ def extract_resume():
         prompt = f"""Extract all resume information and return it as JSON in the *exact structure* below.
 
         👉 IMPORTANT:
-        - If the resume belongs to a **fresher** (i.e. no work experience section), then place the summary text inside the **"objective"** field and leave **"summary"** blank.
-        - If the resume belongs to an **experienced candidate** (i.e. work experience section is present), then place the summary text inside the **"summary"** field and leave **"objective"** blank.
+        - If the resume belongs to a **fresher** (i.e. no work experience section), then place the summary text inside the **"objective"** field and  **"summary"** .
+        - If the resume belongs to an **experienced candidate** (i.e. work experience section is present), then place the summary text inside the **"summary"** field and  **"objective"** .
         
         Map section headings even if synonyms are used. For example:
         - "Professional Summary", "About Me", or "Objective" → summary/objective as per above condition

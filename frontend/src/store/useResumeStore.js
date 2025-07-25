@@ -1,9 +1,7 @@
 import { create } from "zustand";
 
 const useResumeStore = create((set) => ({
-
-
-
+  // Toggle for fresher/experienced user
   toggle: "fresher", // Default to fresher
   setToggle: (value) => set({ toggle: value }),
 
@@ -21,6 +19,11 @@ const useResumeStore = create((set) => ({
   resumeFiles: null,
   setResumeFiles: (file) => set({ resumeFiles: file }),
 
+  // Current template ID
+  template: "microsoft", // Default template
+  setTemplate: (template) => set({ template }), // Action to update template
+
+  // Form data for manual resume building
   manualForm: {
     Name: "",
     jobTitle: "",
@@ -30,7 +33,7 @@ const useResumeStore = create((set) => ({
     linkedin: "",
     github: "",
     summary: "",
-    objective:"",
+    objective: "",
     experience: [],
     education: [],
     projects: [],
@@ -123,12 +126,13 @@ const useResumeStore = create((set) => ({
   dataToBuild: null,
   setDataToBuild: (data) => set({ dataToBuild: data }),
 
-  // Modified reset function to preserve resumeId
-  reset: () =>
+  // Reset function to clear state, preserving resumeId for existing resumes
+  reset: (preserveResumeId = false) =>
     set((state) => ({
       currentStep: "INITIAL_UPLOAD",
       resumeFile: null,
       jdText: "",
+      resumeFiles: null,
       manualForm: {
         Name: "",
         jobTitle: "",
@@ -138,7 +142,7 @@ const useResumeStore = create((set) => ({
         linkedin: "",
         github: "",
         summary: "",
-        objective:"",
+        objective: "",
         experience: [],
         education: [],
         projects: [],
@@ -170,7 +174,9 @@ const useResumeStore = create((set) => ({
       optimizedResumeFile: null,
       scoreHistory: [],
       dataToBuild: null,
-      isLoading: false, 
+      isLoading: false,
+      resumeId: preserveResumeId ? state.resumeId : null, // Preserve resumeId if specified
+      template: "microsoft", // Reset to default template
     })),
 }));
 

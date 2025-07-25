@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import {
@@ -11,7 +11,7 @@ import {
   Sparkles,
   PenTool,
 } from "lucide-react";
-
+import useResumeStore from "../store/useResumeStore"; // Import useResumeStore to set template
 // Import your template components
 import Google from "./templates/Google";
 import Meta from "./templates/Meta";
@@ -22,10 +22,10 @@ const Dashboard = () => {
   const [newTitle, setNewTitle] = useState("");
   const [toast, setToast] = useState({ message: "", type: "", visible: false });
   const [user, setUser] = useState(null);
-  const previewRef = useRef();
   const [resumes, setResumes] = useState([]);
   const [loadingResumes, setLoadingResumes] = useState(true);
   const navigate = useNavigate();
+  const { setTemplate } = useResumeStore(); // Access setTemplate from store
 
   const handleEditTitle = (resumeId, currentTitle) => {
     console.log(`Editing title for resume ID: ${resumeId}`);
@@ -132,24 +132,29 @@ const Dashboard = () => {
 
   const handleCreateNew = () => {
     console.log("Action: Navigate to create new resume.");
-    navigate("/resume-builder", {
+    setTemplate("microsoft"); // Set default template in store
+    navigate("/builder/microsoft", {
       state: {
         content: {},
         resumeId: null,
+        template: "microsoft", // Explicitly pass template
       },
     });
   };
 
   const handleAnalyzeScore = () => {
-    console.log("Action :navigate to analyze resume.");
+    console.log("Action: Navigate to analyze resume.");
     navigate("/analyze");
   };
 
   const handleSelect = (resume) => {
+    console.log("Selecting resume:", resume._id, resume.template);
+    setTemplate(resume.template); // Update template in store
     navigate(`/builder/${resume.template}`, {
       state: {
-        content: resume.content,
+        content: resume.content || {},
         resumeId: resume._id,
+        template: resume.template, // Pass template for consistency
       },
     });
   };
@@ -217,9 +222,9 @@ const Dashboard = () => {
               aria-label="Create New Resume"
             >
               <PenTool
-                    className="mr-2 transition-transform duration-300 group-hover:rotate-12"
-                    size={20}
-                  />
+                className="mr-2 transition-transform duration-300 group-hover:rotate-12"
+                size={20}
+              />
               <span>Create New Resume</span>
             </button>
             <button
