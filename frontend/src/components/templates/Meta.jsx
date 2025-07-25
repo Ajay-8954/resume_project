@@ -82,32 +82,36 @@ const Meta = forwardRef(({ data = {} }, ref) => {
     
 
     {/* Work Experience */}
-      {experience?.length > 0 && (
-        <section className="meta-section">
-          <h2 className="meta-section-heading">WORK EXPERIENCE</h2>
-          {experience.map((item, i) => (
-            <div key={i} className="meta-item">
-              <div className="meta-flex">
-                <strong className="info-internship">
-                  <i>{item.jobTitle || item.role}</i> - {item.company} , {item.location}
-                </strong>
-                <strong className="meta-dates">
-                  {item.startDate} - {item.endDate}
-                </strong>
-              </div>
-              <ul className="meta-bullets">
-                {(item.description || "")
-                  .split("\n")
-                  .map((point) => point.trim())
-                  .filter(Boolean)
-                  .map((point, j) => (
-                    <li key={j}>{point.replace(/^\s*•\s*/, "").trim()}</li>
-                  ))}
-              </ul>
-            </div>
-          ))}
-        </section>
-      )}
+  {experience?.length > 0 && (
+  <section className="meta-section">
+    <h2 className="meta-section-heading">WORK EXPERIENCE</h2>
+    {experience.map((item, i) => (
+      <div key={i} className="meta-item">
+        <div className="meta-flex">
+          <strong className="info-internship">
+            <i>{item.jobTitle || item.role}</i> - {item.company} , {item.location}
+          </strong>
+          <strong className="meta-dates">
+            {item.startDate} - {item.endDate}
+          </strong>
+        </div>
+        <ul className="meta-bullets">
+          {Array.isArray(item.description)
+            ? item.description.map((point, j) => (
+                <li key={j}>{point.trim()}</li>
+              ))
+            : (typeof item.description === "string" ? item.description : "")
+                .split("\n")
+                .map((point) => point.trim())
+                .filter(Boolean)
+                .map((point, j) => (
+                  <li key={j}>{point.replace(/^\s*•\s*/, "").trim()}</li>
+                ))}
+        </ul>
+      </div>
+    ))}
+  </section>
+)}
 
         {/* Education */}
       {education?.length > 0 && (

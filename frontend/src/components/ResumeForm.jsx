@@ -1488,7 +1488,7 @@ export default function ResumeForm() {
                 </div>
               </div>
               <div>
-                <label className="block text-sm text-gray-500 mb-1">CGPA</label>
+                <label className="block text-sm text-gray-500 mb-1">CGPA </label>
                 <input
                   type="text"
                   className="w-full border border-gray-300 rounded-md p-2 text-sm"
