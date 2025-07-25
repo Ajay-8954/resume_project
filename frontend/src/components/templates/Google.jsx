@@ -87,30 +87,8 @@ const Google = forwardRef(({ data = {} }, ref) => {
         </section>
       )}
 
-      {/* Education */}
-      {education.length > 0 && (
-        <section className="section-t2 mt-3">
-          <h2 className="section-title-t2 font-semibold border-b text-[13px]">
-            EDUCATION
-          </h2>
-          {education.map((edu, idx) => (
-            <div key={idx} className="item-t2 mt-1">
-              <div className="flex justify-between items-baseline">
-                <div>
-                  <p className="font-semibold text-[11px] info-capital">{edu.school}</p>
-                  <p className="text-[10px]">{edu.degree}</p>
-                </div>
-                <p className="text-gray-700 text-[10px]">
-                  {formatDate(edu.startDate)} - {formatDate(edu.endDate)}
-                </p>
-              </div>
-              {edu.cgpa && <p className="text-gray-700 text-[10px]">CGPA: {edu.cgpa}</p>}
-            </div>
-          ))}
-        </section>
-      )}
 
-        {/* Skills */}
+          {/* Skills */}
       {skills.length > 0 && (
         <section className="section-t2 skills-section mt-3">
           <h2 className="section-title-t2 font-semibold border-b text-[13px]">
@@ -124,6 +102,68 @@ const Google = forwardRef(({ data = {} }, ref) => {
         </section>
       )}
 
+
+           {/* Experience */}
+      {experience.length > 0 && (
+        <section className="section-t2 mt-3">
+          <h2 className="section-title-t2 font-semibold border-b text-[13px]">
+            EXPERIENCE
+          </h2>
+          {experience.map((item, idx) => (
+            <div key={idx} className="item-t2 mt-1">
+              <div className="flex justify-between items-baseline">
+                <div>
+                  <p className="font-semibold text-[11px] info-internship">
+                    {item.company} - {item.jobTitle} , {item.location}
+                  </p>
+                </div>
+                <p className="text-gray-700 text-[10px]">
+                  {formatDate(item.startDate)} - {formatDate(item.endDate)}
+                </p>
+              </div>
+              <ul className="list-disc list-inside ml-4 mt-1 text-gray-800 leading-tight">
+                {Array.isArray(item.description)
+                  ? item.description.map((point, i) => (
+                      <li key={i} className="text-[10px]">{point}</li>
+                    ))
+                  : (item.description || "")
+                      .split("\n")
+                      .filter(Boolean)
+                      .map((point, i) => (
+                        <li key={i} className="text-[10px]">{point.replace(/^\s*•\s*/, "").trim()}</li>
+                      ))}
+              </ul>
+            </div>
+          ))}
+        </section>
+      )}
+
+
+      {/* Education */}
+      {education.length > 0 && (
+        <section className="section-t2 mt-3">
+          <h2 className="section-title-t2 font-semibold border-b text-[13px]">
+            EDUCATION
+          </h2>
+          {education.map((edu, idx) => (
+            <div key={idx} className="item-t2 mt-1">
+              <div className="flex justify-between items-baseline">
+                <div>
+                  <p className="font-semibold text-[11px] info-capital">{edu.school}</p>
+                  <p className="text-[10px]">{edu.degree} , {edu.location}</p>
+                </div>
+                <p className="text-gray-700 text-[10px]">
+                  {formatDate(edu.startDate)} - {formatDate(edu.endDate)}
+                </p>
+              </div>
+              {edu.cgpa && <p className="text-gray-700 text-[10px]">CGPA: {edu.cgpa}</p>}
+            </div>
+          ))}
+        </section>
+      )}
+
+    
+
       {/* Internship */}
       {internships.length > 0 && (
         <section className="section-t2 mt-3">
@@ -135,7 +175,7 @@ const Google = forwardRef(({ data = {} }, ref) => {
               <div className="flex justify-between items-baseline">
                 <div>
                   <p className="font-semibold text-[11px] info-internship">
-                    {item.company} - {item.jobTitle || item.role}
+                    {item.company} - {item.jobTitle || item.role} , {item.location}
                   </p>
                 </div>
                 <p className="text-gray-700 text-[10px]">
@@ -151,7 +191,7 @@ const Google = forwardRef(({ data = {} }, ref) => {
                       .split("\n")
                       .filter(Boolean)
                       .map((point, i) => (
-                        <li key={i} className="text-[10px]">{point}</li>
+                        <li key={i} className="text-[10px]">{point.replace(/^\s*•\s*/, "").trim()}</li>
                       ))}
               </ul>
             </div>
@@ -159,40 +199,7 @@ const Google = forwardRef(({ data = {} }, ref) => {
         </section>
       )}
 
-       {/* Experience */}
-      {experience.length > 0 && (
-        <section className="section-t2 mt-3">
-          <h2 className="section-title-t2 font-semibold border-b text-[13px]">
-            EXPERIENCE
-          </h2>
-          {experience.map((item, idx) => (
-            <div key={idx} className="item-t2 mt-1">
-              <div className="flex justify-between items-baseline">
-                <div>
-                  <p className="font-semibold text-[11px] info-internship">
-                    {item.company} - {item.jobTitle}
-                  </p>
-                </div>
-                <p className="text-gray-700 text-[10px]">
-                  {formatDate(item.startDate)} - {formatDate(item.endDate)}
-                </p>
-              </div>
-              <ul className="list-disc list-inside ml-4 mt-1 text-gray-800 leading-tight">
-                {Array.isArray(item.description)
-                  ? item.description.map((point, i) => (
-                      <li key={i} className="text-[10px]">{point}</li>
-                    ))
-                  : (item.description || "")
-                      .split("\n")
-                      .filter(Boolean)
-                      .map((point, i) => (
-                        <li key={i} className="text-[10px]">{point}</li>
-                      ))}
-              </ul>
-            </div>
-          ))}
-        </section>
-      )}
+
 
 
       {/* Projects */}
@@ -251,7 +258,7 @@ const Google = forwardRef(({ data = {} }, ref) => {
                   : (ach.description || "")
                       .split("\n")
                       .filter(Boolean)
-                      .map((point, i) => <li key={i}>{point}</li>)}
+                      .map((point, i) => <li key={i}>{point.replace(/^\s*•\s*/, "").trim()}</li>)}
               </ul>
             </div>
           ))}
@@ -276,18 +283,6 @@ const Google = forwardRef(({ data = {} }, ref) => {
         </section>
       )}
 
-        {interests.length > 0 && (
-        <section className="section-t2 mt-3">
-          <h2 className="section-title-t2 font-semibold border-b text-[13px]">
-            INTERESTS
-          </h2>
-          <ul className="list-disc list-inside ml-4 mt-1 text-[11px] space-y-0.5 info-interest">
-            {interests.map((interest, idx) => (
-              <li key={idx} >{interest}</li>
-            ))}
-          </ul>
-        </section>
-      )}
 
        {languages.length > 0 && (
         <section className="section-t2 mt-3">
@@ -297,6 +292,20 @@ const Google = forwardRef(({ data = {} }, ref) => {
           <ul className="list-disc list-inside ml-4 mt-1 space-y-0.5">
             {languages.map((lang, idx) => (
               <li key={idx} className="text-[10px] info-language">{lang}</li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+
+          {interests.length > 0 && (
+        <section className="section-t2 mt-3">
+          <h2 className="section-title-t2 font-semibold border-b text-[13px]">
+            INTERESTS
+          </h2>
+          <ul className="list-disc list-inside ml-4 mt-1 text-[11px] space-y-0.5 info-interest">
+            {interests.map((interest, idx) => (
+              <li key={idx} >{interest}</li>
             ))}
           </ul>
         </section>

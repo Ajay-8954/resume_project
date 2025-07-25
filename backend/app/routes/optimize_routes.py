@@ -283,7 +283,7 @@ def parse_final_resume_to_json():
                     "company": "Company Name",
                     "startDate": "Month Year",
                     "endDate": "Month Year",
-                    "description": "Job description..."
+                    "description": ["Point 1", "Point 2"]
                 }}
             ],
             "internship": [
@@ -292,7 +292,7 @@ def parse_final_resume_to_json():
                     "company": "Company Name",
                     "startDate": "Month Year",
                     "endDate": "Month Year",
-                    "description": "Job description..."
+                    "description": ["Point 1", "Point 2"]
                 }}
             ],
             "education": [

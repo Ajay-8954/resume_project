@@ -5,126 +5,110 @@ import Meta from "./templates/Meta";
 
 // Dummy data
 const dummyData = {
-  "Name": "John A. Smith",
-  "jobTitle": "Senior Software Engineer",
-  "email": "john.smith@example.com",
-  "phone": "(555) 123-4567",
-  "location": "San Francisco, CA",
-  "linkedin": "https://linkedin.com/in/johnsmith",
-  "github": "https://github.com/johnsmith",
-  "summary": "Results-driven software engineer with 5+ years of experience in full-stack development. Specialized in JavaScript frameworks and cloud architecture. Passionate about building scalable web applications and mentoring junior developers.",
+  "Name": "Rahul Verma",
+  "jobTitle": "Full Stack Developer",
+  "email": "rahul.verma@example.com",
+  "phone": "+91-9876543210",
+  "location": "Bangalore, India",
+  "linkedin": "https://linkedin.com/in/rahulverma",
+  "github": "https://github.com/rahulverma",
+  "summary": "Detail-oriented and passionate full stack developer with 2+ years of experience building scalable web applications using MERN stack. Adept at solving complex problems and delivering high-quality code.",
+  "objective": "To leverage my technical and problem-solving skills to contribute to a forward-thinking tech company and grow as a software engineer.",
   "experience": [
     {
-      "jobTitle": "Senior Software Engineer",
-      "company": "TechCorp Inc.",
-      "startDate": "Jan 2020",
+      "jobTitle": "Software Engineer",
+      "company": "TechNova Solutions",
+      "startDate": "June 2022",
       "endDate": "Present",
-      "description": "Lead a team of 5 developers to build and maintain the company's flagship SaaS product. Implemented microservices architecture that improved system performance by 40%."
-    },
-    {
-      "jobTitle": "Software Developer",
-      "company": "Digital Solutions LLC",
-      "startDate": "Jun 2017",
-      "endDate": "Dec 2019",
-      "description": "Developed and maintained web applications using React and Node.js. Reduced page load times by 30% through performance optimization."
+      "description": "Developed and maintained full stack web applications using React, Node.js, and MongoDB. Implemented RESTful APIs and optimized performance by 30%."
     }
   ],
   "internship": [
     {
-      "jobTitle": "Software Engineering Intern",
-      "company": "Innovatech",
-      "startDate": "May 2016",
-      "endDate": "Aug 2016",
-      "description": "Assisted in developing internal tools and participated in code reviews. Gained experience with Agile methodologies."
+      "jobTitle": "Web Development Intern",
+      "company": "CodeWave",
+      "startDate": "Jan 2022",
+      "endDate": "May 2022",
+      "description": "Worked on frontend modules using HTML, CSS, JavaScript, and React. Collaborated in Agile sprints and contributed to bug fixes and feature development."
     }
   ],
   "education": [
     {
-      "degree": "B.S. in Computer Science",
-      "school": "University of California, Berkeley",
-      "startDate": "2013",
-      "endDate": "2017"
+      "degree": "Bachelor of Technology",
+      "school": "Indian Institute of Technology, Delhi",
+      "level": "Undergraduate",
+      "startDate": "2018",
+      "endDate": "2022",
+      "cgpa": "8.5/10"
     }
   ],
-  "skills": [
-    "JavaScript",
-    "React",
-    "Node.js",
-    "Python",
-    "AWS",
-    "Docker",
-    "SQL",
-    "Git"
-  ],
-  "languages": [
-    "English (Fluent)",
-    "Spanish (Intermediate)"
-  ],
-  "interests": [
-    "Open Source Contributions",
-    "Machine Learning",
-    "Hiking",
-    "Photography"
-  ],
+  "skills": ["JavaScript", "React.js", "Node.js", "MongoDB", "Express", "Git", "HTML", "CSS"],
+  "languages": ["English", "Hindi"],
+  "interests": ["Photography", "Open Source Contribution", "Chess"],
   "achievements": [
     {
-      "title": "Employee of the Year 2021",
-      "points": [
-        "Recognized for outstanding contributions to the company's core product",
-        "Led initiative that reduced customer support tickets by 25%"
-      ]
+      "title": "LeetCode 500+ Problems Solved",
+      "description": "Solved over 500 algorithmic problems on LeetCode with consistent top 10% rankings in contests."
     },
     {
-      "title": "Hackathon Winner",
-      "points": [
-        "Won first place in company-wide hackathon for developing a productivity tool",
-        "Solution was later integrated into the main product"
-      ]
+      "title": "Winner - Smart India Hackathon 2021",
+      "description": "Led a team of 4 to build a government-approved solution for road safety and traffic analysis."
     }
   ],
   "projects": [
     {
-      "title": "E-commerce Platform",
-      "startDate": "Mar 2021",
-      "endDate": "Aug 2021",
-      "tech": "React, Node.js, MongoDB, Stripe API",
-      "points": [
-        "Built a full-featured online store with cart functionality and payment processing",
-        "Implemented JWT authentication for secure user accounts",
-        "Optimized database queries reducing load times by 35%"
+      "title": "College Connect Portal",
+      "startDate": "Feb 2022",
+      "endDate": "May 2022",
+      "tech": "React, Node.js, MongoDB, Express",
+      "description": [
+        "Built a MERN-based platform for students to share notes, schedule events, and form project groups.",
+        "Implemented authentication, file uploads, and real-time chat using Socket.io."
       ]
     },
     {
-      "title": "Task Management App",
-      "startDate": "Jan 2020",
-      "endDate": "Feb 2020",
-      "tech": "Vue.js, Firebase",
-      "points": [
-        "Developed a collaborative task management application with real-time updates",
-        "Integrated Google Calendar API for deadline tracking",
-        "Open-sourced project with 500+ GitHub stars"
+      "title": "Personal Portfolio Website",
+      "startDate": "Aug 2021",
+      "endDate": "Sept 2021",
+      "tech": "React, TailwindCSS",
+      "description": [
+        "Created a personal website to showcase projects and blog posts.",
+        "Deployed on Netlify with responsive design and smooth scroll features."
       ]
+    }
+  ],
+  "certifications": [
+    {
+      "name": "Full Stack Web Development",
+      "issuer": "Coursera - Meta",
+      "Date": "April 2023"
+    },
+    {
+      "name": "Data Structures & Algorithms",
+      "issuer": "Udemy",
+      "Date": "December 2022"
     }
   ]
 }
+
 ;
 
 const templates = [
   {
     id: "microsoft",
-    name: "Microsoft",
+    name: "Modern",
     description: "Clean, corporate style",
     PreviewComponent: Microsoft,
   },
   {
     id: "google",
-    name: "Google",
+    name: "Classic",
     description: "Modern and minimalistic",
     PreviewComponent: Google,
   },
   {
     id: "meta",
-    name: "Meta",
+    name: "Slate",
     description: "Elegant, serif font style",
     PreviewComponent: Meta,
   },

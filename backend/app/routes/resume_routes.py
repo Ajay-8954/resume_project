@@ -398,6 +398,7 @@ def extract_resume():
         - "Education", "Academic Background", or "Qualifications" → education
         - "Projects", "Project Experience", "Work Samples", or "Portfolio" → projects
         - "Awards", "Honors", "Achievements", or "Recognition" → achievements
+        - "Experience", "Professional Experience", "Professsional background", "occupation History", "Career Experience," or "Work experience"
 
         Format your output like this:
 
@@ -409,15 +410,16 @@ def extract_resume():
             "location": "City, Country",
             "linkedin": "https://linkedin.com/...",
             "github": "https://github.com/...",
-            "summary": "Professional summary...",     <-- leave blank for fresher
-            "objective": "Carrer Objectives",         <-- leave blank for experienced
+            "summary": "Professional summary...",     
+            "objective": "Carrer Objectives",       
             "experience": [
                 {{
                     "jobTitle": "Job Title",
                     "company": "Company Name",
                     "startDate": "Month Year",
                     "endDate": "Month Year",
-                    "description": "Job description..."
+                    "location": "working location",
+                    "description": ["Point 1", "Point 2"]
                 }}
             ],
             "internship": [
@@ -426,7 +428,8 @@ def extract_resume():
                     "company": "Company Name",
                     "startDate": "Month Year",
                     "endDate": "Month Year",
-                    "description": "Job description..."
+                    "location": "working location",
+                    "description": ["Point 1", "Point 2"]
                 }}
             ],
             "education": [
@@ -436,6 +439,7 @@ def extract_resume():
                     "level": "type of education level",
                     "startDate": "Year",
                     "endDate": "Year",
+                    "location": "working location",
                     "cgpa": "X.XX/10"  
                 }}
             ],
@@ -445,7 +449,7 @@ def extract_resume():
             "achievements": [
                 {{
                     "title": "Achievement Title",
-                    "description":" "
+                    "description":"some description about the achievement"
                 }}
             ],
             "projects": [
@@ -493,113 +497,6 @@ def extract_resume():
         }), 500
 
 
-
-
-@resume_bp.route("/api/fix-resume", methods=["POST"])
-def fix_resume():
-    data = request.get_json()
-    jd = data.get('jd')
-    answers = data.get('answerss', {})
-    resume = data.get('resume')
-
-    if not jd or not resume:
-        return jsonify({"error": "JD and Resume are required"}), 400
-
-    # Format answers
-    formatted_answers = "\n".join(
-        f"Q{i+1}: {q}\nA{i+1}: {a}" 
-        for i, (q, a) in enumerate(answers.items())
-    ) if answers else "No answers provided"
-
-    prompt = f"""You are an expert resume writer. Rewrite this resume to match the job description:
-    
-Job Description:
-{jd}
-
-Original Resume:
-{resume}
-
-Candidate's Additional Answers:
-{formatted_answers}
-
-Return ONLY valid JSON in this exact format (no other text or explanation):
-  {{
-            "Name": "Full Name",
-            "jobTitle": "Job Title",
-            "email": "email@example.com",
-            "phone": "123-456-7890",
-            "location": "City, Country",
-            "linkedin": "https://linkedin.com/...",
-            "github": "https://github.com/...",
-            "summary": "Professional summary...",
-            "experience": [
-                {{
-                    "jobTitle": "Job Title",
-                    "company": "Company Name",
-                    "startDate": "Month Year",
-                    "endDate": "Month Year",
-                    "description": "Job description..."
-                }}
-            ],
-            "internship": [
-                {{
-                    "jobTitle": "Job Title",
-                    "company": "Company Name",
-                    "startDate": "Month Year",
-                    "endDate": "Month Year",
-                    "description": "Job description..."
-                }}
-            ],
-            "education": [
-                {{
-                    "degree": "Degree Name",
-                    "school": "School Name",
-                    "startDate": "Year",
-                    "endDate": "Year"
-                }}
-            ],
-            "skills": ["Skill1", "Skill2"],
-            "languages": ["Language1", "Language2"],
-            "interests": ["Interest1", "Interest2"],
-            "achievements": [
-                {{
-                    "title": "Achievement Title",
-                    "points": ["Point 1", "Point 2"]
-                }}
-            ],
-            "projects": [
-                {{
-                    "title": "Project Title",
-                    "startDate": "Month Year",
-                    "endDate": "Month Year",
-                    "tech": "Tools/Tech Stack",
-                    "points": ["Point 1", "Point 2"]
-                }}
-            ]
-    }}"""
-
-    try:
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",  # or "gpt-4-turbo" if available
-            messages=[
-                {"role": "system", "content": "You output perfect JSON formatted resumes. Never add any explanatory text."},
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0.3,  # Lower temperature for more consistent results
-            max_tokens=2000
-        )
-
-        # Extract and clean the JSON response
-        ai_response = response.choices[0].message.content
-        json_str = ai_response[ai_response.find('{'):ai_response.rfind('}')+1]
-        parsed = json.loads(json_str)
-        
-        return jsonify({"fixed_resume": parsed})
-        
-    except json.JSONDecodeError:
-        return jsonify({"error": "Failed to parse AI response as JSON"}), 500
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
 
 
 

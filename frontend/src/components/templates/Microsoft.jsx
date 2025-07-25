@@ -71,24 +71,6 @@ const Microsoft = forwardRef(({ data = {} }, ref) => {
         </section>
       )}
 
-      {education.length > 0 && (
-        <section>
-          <SectionTitle>Education</SectionTitle>
-          {education.map((edu, idx) => (
-            <div key={idx} className="education-item">
-              <div className="education-row">
-                <p>{edu.degree}</p>
-                <span className="date-right">
-                  {formatDate(edu.startDate)} - {formatDate(edu.endDate) || "Present"}
-                </span>
-              </div>
-              <p className="section-text info-capital">{edu.school}</p>
-              {edu.cgpa && <span className="section-text">CGPA: {edu.cgpa}</span>}
-            </div>
-          ))}
-        </section>
-      )}
-
       {skills.length > 0 && (
         <section>
           <SectionTitle>Skills</SectionTitle>
@@ -108,7 +90,8 @@ const Microsoft = forwardRef(({ data = {} }, ref) => {
         </section>
       )}
 
-   {experience.length > 0 && (
+
+        {experience.length > 0 && (
         <section>
           <SectionTitle>Work History</SectionTitle>
           {experience.map((item, idx) => (
@@ -116,7 +99,7 @@ const Microsoft = forwardRef(({ data = {} }, ref) => {
               <div className="work-row">
                 <div className="info-internship">
                   <h3 >{item.jobTitle}</h3>
-                  <p className="section-text">{item.company}</p>
+                  <p className="section-text">{item.company},{item.location}</p>
                 </div>
                 <div className="date-right">
                   {formatDate(item.startDate)} - {formatDate(item.endDate) || "Present"}
@@ -127,13 +110,35 @@ const Microsoft = forwardRef(({ data = {} }, ref) => {
                   ? item.description
                   : (item.description || "").split("\n")
                 ).filter(Boolean).map((point, i) => (
-                  <li key={i}>{point}</li>
+                  <li key={i}>{point.replace(/^\s*•\s*/, "").trim()}</li>
                 ))}
               </ul>
             </div>
           ))}
         </section>
       )}
+
+      {education.length > 0 && (
+        <section>
+          <SectionTitle>Education</SectionTitle>
+          {education.map((edu, idx) => (
+            <div key={idx} className="education-item">
+              <div className="education-row">
+                <p>{edu.degree}</p>
+                <span className="date-right">
+                  {formatDate(edu.startDate)} - {formatDate(edu.endDate) || "Present"}
+                </span>
+              </div>
+              <p className="section-text info-capital">{edu.school},{edu.location}</p>
+              {edu.cgpa && <span className="section-text">CGPA: {edu.cgpa}</span>}
+            </div>
+          ))}
+        </section>
+      )}
+
+      
+
+ 
 
       {internships.length > 0 && (
         <section>
@@ -143,7 +148,7 @@ const Microsoft = forwardRef(({ data = {} }, ref) => {
               <div className="work-row">
                 <div className="info-internship">
                   <h3>{item.role}</h3>
-                  <p className="section-text">{item.company}</p>
+                  <p className="section-text">{item.company}, {item.location}</p>
                 </div>
                 <div className="date-right">
                   {formatDate(item.startDate)} - {formatDate(item.endDate) || "Present"}
@@ -154,7 +159,7 @@ const Microsoft = forwardRef(({ data = {} }, ref) => {
                   ? item.description
                   : (item.description || "").split("\n")
                 ).filter(Boolean).map((point, i) => (
-                  <li key={i}>{point}</li>
+                  <li key={i}>{point.replace(/^\s*•\s*/, "").trim()}</li>
                 ))}
               </ul>
             </div>
@@ -179,10 +184,24 @@ const Microsoft = forwardRef(({ data = {} }, ref) => {
                 {(Array.isArray(proj.description)
                   ? proj.description
                   : (proj.description || "").split("\n")
-                ).filter(Boolean).map((point, i) => <li key={i}>{point}</li>)}
+                ).filter(Boolean).map((point, i) => <li key={i}>{point.replace(/^\s*•\s*/, "").trim()}</li>)}
               </ul>
             </div>
           ))}
+        </section>
+      )}
+
+            {certifications.length > 0 && (
+        <section>
+          <SectionTitle>Certifications</SectionTitle>
+          <ul className="certification-list">
+            {certifications.map((cert, idx) => (
+              <li key={idx} className="certification-item">
+                <p>{cert.name}</p>
+                <span className="date-right">{formatDate(cert.date)}</span>
+              </li>
+            ))}
+          </ul>
         </section>
       )}
 
@@ -200,26 +219,14 @@ const Microsoft = forwardRef(({ data = {} }, ref) => {
                   .split("\n")
                   .map(line => line.trim())
                   .filter(Boolean)
-                  .map((point, i) => <li key={i}>{point}</li>)}
+                  .map((point, i) => <li key={i}>{point.replace(/^\s*•\s*/, "").trim()}</li>)}
               </ul>
             </div>
           ))}
         </section>
       )}
 
-      {certifications.length > 0 && (
-        <section>
-          <SectionTitle>Certifications</SectionTitle>
-          <ul className="certification-list">
-            {certifications.map((cert, idx) => (
-              <li key={idx} className="certification-item">
-                <p>{cert.name}</p>
-                <span className="date-right">{formatDate(cert.date)}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+
 
       {interests?.length > 0 && (
         <section>
