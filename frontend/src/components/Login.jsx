@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import useAuthStore from '../store/useAuthStore'; // Ensure this import is correct
 import { motion } from 'framer-motion';
+import GoogleSignInButton from '../components/GoogleSignIn/GoogleSignInButton';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -195,6 +196,22 @@ const Login = () => {
             )}
           </motion.button>
         </form>
+
+
+
+               {/* Google Sign-In Option */}
+        <div className="text-center space-y-2">
+          <p className="text-gray-600">Or sign in with</p>
+          <GoogleSignInButton
+            onSuccess={(user) => {
+              setAuth(true, user); // Sync with auth store
+              navigate('/dashboard'); // Redirect on success
+            }}
+            onError={(errorMsg) => setError(errorMsg)} // Handle errors
+          />
+        </div>
+
+
 
         {/* Navigation to Signup */}
         <div className="text-center">

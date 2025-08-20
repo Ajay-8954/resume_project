@@ -13,7 +13,18 @@ body {
   margin: 10mm;
 }
 
-.resume-container {
+/* Reset default list styles */
+ul, li {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+
+
+
+
+.resume-containerr {
   width: 170mm;
   min-height: 297mm;
   background: white;
@@ -78,6 +89,8 @@ body {
   display: flex;
   align-items: center;
   margin: 1rem 0;
+  border-bottom: none !important;
+
 }
 
 .section-title span {
@@ -158,19 +171,81 @@ body {
   margin-top: 0.25rem;
 }
 
-.skills-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  column-gap: 3rem;
+/* education-item */
+/* Add these styles to your existing CSS */
+.education-item {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  width: 100%;
+}
+
+.education-left {
+  flex: 1;
+  min-width: 0; /* Prevents overflow */
+}
+
+.education-right {
+  flex-shrink: 0; /* Prevents date from wrapping */
+  margin-left: 1rem;
+}
+
+.degree {
+  font-size: 0.8rem;
+  font-weight: bold;
+  margin: 0;
+  white-space: normal;
+}
+
+.university {
   font-size: 0.75rem;
   color: #4a5568;
+  margin: 0.1rem 0;
+}
+
+.gpa {
+  font-size: 0.75rem;
+  color: #4a5568;
+  font-style: italic;
+  margin: 0;
+}
+
+.dates {
+  font-size: 0.75rem;
+  color: #718096;
+  white-space: nowrap;
+  text-align: right;
+}
+
+
+
+.skills-grid {
+  display: flex; /* Use flex instead of grid for better PDF support */
+  gap: 3rem; /* This creates the space between columns */
 }
 
 .skills-grid ul {
-  list-style: disc;
-  list-style-position: inside;
-  margin: 0.25rem 0;
+  flex: 1; /* Makes both columns equal width */
+  list-style: none; /* Remove default bullets */
+  padding-left: 1rem; /* Indent list items */
+  margin: 0; /* Remove default margins */
 }
+
+.skills-grid li {
+  font-size: 0.75rem; /* Add this line */
+  position: relative;
+  padding-left: 1rem;
+  margin-bottom: 0.25rem;
+  color: #4a5568; 
+}
+
+.skills-grid li::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  color: #4a5568;
+}
+
 
 .list-disc {
   padding-left: 1.25rem;

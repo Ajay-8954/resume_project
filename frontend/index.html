@@ -3,9 +3,20 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AI CV Builder</title>
-     <link href="/src/styles.css" rel="stylesheet">
+    <link href="/src/styles.css" rel="stylesheet" />
+
+ <meta http-equiv="Content-Security-Policy"
+  content="default-src 'self'; 
+           script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://apis.google.com https://www.gstatic.com; 
+           style-src 'self' 'unsafe-inline' https://accounts.google.com; 
+           connect-src 'self' http://localhost:5000 http://127.0.0.1:5000  https://accounts.google.com;">
+
+
+    <!-- ✅ Only include the NEW GIS script -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
   </head>
   <body>
     <div id="root"></div>

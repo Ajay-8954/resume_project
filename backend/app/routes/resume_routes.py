@@ -446,8 +446,8 @@ def extract_resume():
             "location": "City, Country",
             "linkedin": "https://linkedin.com/...",
             "github": "https://github.com/...",
-            "summary": "Professional summary...",     
-            "objective": "Carrer Objectives",       
+            "summary": "Professional summary...",     <--if you extract summary from resume put it here
+            "objective": "Carrer Objectives",         if you extract summary from resume put it here also 
             "experience": [
                 {{
                     "jobTitle": "Job Title",
@@ -458,9 +458,9 @@ def extract_resume():
                     "description": ["Point 1", "Point 2"]
                 }}
             ],
-            "internship": [
+            "internships": [
                 {{
-                    "jobTitle": "Job Title",
+                    "role": "Job Title",
                     "company": "Company Name",
                     "startDate": "Month Year",
                     "endDate": "Month Year",
@@ -502,7 +502,7 @@ def extract_resume():
                 {{
                     "name": "Certification name",
                     "issuer": "name of the issuer",
-                    "Date": "Month Year",
+                    "date": "Month Year",
                 }}
             ]
     }}"""  # Your existing prompt
@@ -749,6 +749,11 @@ body {
   min-height: 297mm;
 }
 
+.resume-inner {
+  padding: 10mm; 
+  box-sizing: border-box;
+}
+
 .meta-name {
   font-size: 24px;
   text-align: center;
@@ -836,9 +841,6 @@ body {
                 """)
             elif template_id == "microsoft":
                 page.add_style_tag(content="""
-           /* UPDATED EXTERNAL CSS (Microsoft.css) */
-
-/* UPDATED EXTERNAL CSS (Microsoft.css) */
 
 body {
   font-family: 'Segoe UI', sans-serif;
@@ -967,19 +969,81 @@ body {
   margin-top: 0.25rem;
 }
 
-.skills-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  column-gap: 3rem;
+/* education-item */
+/* Add these styles to your existing CSS */
+.education-item {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  width: 100%;
+}
+
+.education-left {
+  flex: 1;
+  min-width: 0; /* Prevents overflow */
+}
+
+.education-right {
+  flex-shrink: 0; /* Prevents date from wrapping */
+  margin-left: 1rem;
+}
+
+.degree {
+  font-size: 0.8rem;
+  font-weight: bold;
+  margin: 0;
+  white-space: normal;
+}
+
+.university {
   font-size: 0.75rem;
   color: #4a5568;
+  margin: 0.1rem 0;
+}
+
+.gpa {
+  font-size: 0.75rem;
+  color: #4a5568;
+  font-style: italic;
+  margin: 0;
+}
+
+.dates {
+  font-size: 0.75rem;
+  color: #718096;
+  white-space: nowrap;
+  text-align: right;
+}
+
+
+
+.skills-grid {
+  display: flex; /* Use flex instead of grid for better PDF support */
+  gap: 3rem; /* This creates the space between columns */
 }
 
 .skills-grid ul {
-  list-style: disc;
-  list-style-position: inside;
-  margin: 0.25rem 0;
+  flex: 1; /* Makes both columns equal width */
+  list-style: none; /* Remove default bullets */
+  padding-left: 1rem; /* Indent list items */
+  margin: 0; /* Remove default margins */
 }
+
+.skills-grid li {
+  font-size: 0.75rem;
+  position: relative;
+  padding-left: 1rem;
+  margin-bottom: 0.25rem;
+   color: #4a5568; 
+}
+
+.skills-grid li::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  color: #4a5568;
+}
+
 
 .list-disc {
   padding-left: 1.25rem;
@@ -1055,16 +1119,805 @@ body {
         }
 
                 """)
+                
+            elif template_id == "template4":
+                page.add_style_tag(content="""
+                       .resume {
+  font-family: 'Helvetica Neue', Arial, sans-serif;
+  width: 170mm;
+  margin: 0 auto;
+    min-height: 297mm;
+  background-color: white;
+  color: #333;
+  box-sizing: border-box;
+}
+
+.resume-inner {
+  padding: 10mm;  /* reliable in PDF */
+  box-sizing: border-box;
+}
+
+
+/* Header */
+.resume-headerr {
+  text-align: left;
+  margin-bottom: 20px;
+}
+
+.resume-headerr h1 {
+  font-size: 29px;
+  color:black;
+  font-weight: bold;
+}
+
+.resume-headerr h2 {
+  font-size: 15px;
+  margin-bottom: 10px;
+}
+
+.contact-info {
+  font-size: 12px;
+  color: #555;
+  margin-bottom: 20px;
+}
+
+.contact-info span {
+  margin-right: 5px;
+}
+
+/* Summary */
+.summary {
+  margin-bottom: 20px;
+  padding-top: 0;
+  border-top: none;
+}
+
+.section-title {
+  font-size: 14px;
+  font-weight: bold;
+  text-transform: uppercase;
+   border-bottom: 1px solid black !important; 
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.summary-text {
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* Two-column layout */
+.resume-body {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 30px;
+}
+
+.left-column,
+.right-column {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Skills */
+.skills {
+  padding-bottom: 10px;
+}
+
+.skills-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.skill-item {
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  background-color: #f0f0f0;
+  /* text-decoration: underline; */
+  /* line-height: 15px; */
+  white-space: nowrap;
+}
+
+/* Education Section */
+.education {
+  margin-top: 20px;
+}
+
+.education-container {
+  margin-bottom: 1.5rem;
+}
+
+.education-upper {
+  margin-bottom: 0.3rem;
+}
+
+.education-lower {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.school-info {
+  flex: 1;
+}
+
+.date-info {
+  margin-left: 1rem;
+  text-align: right;
+}
+
+.degree {
+  font-size: 13px;
+  font-weight: bold;
+  margin: 0;
+  color: #333;
+}
+
+.university {
+  font-size: 12px;
+  color: #4a5568;
+  margin: 0 0 0.1rem 0;
+}
+
+.gpa {
+  font-size: 0.75rem;
+  color: #4a5568;
+  font-style: italic;
+  margin: 0;
+}
+
+.dates {
+  font-size: 0.75rem;
+  color: #718096;
+  white-space: nowrap;
+}
+
+.info-capital {
+  text-transform: capitalize;
+}
+
+
+/* Common item styling */
+.project-item,
+.experience-item,
+.achievement-item,
+.education-item {
+  margin-bottom: 15px;
+}
+
+.project-item h4,
+.experience-item h4,
+.achievement-item h4,
+.education-item h4 {
+  font-size: 14px;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.project-details,
+.company,
+.cert-details,
+.school {
+  font-size: 12px;
+  font-style: italic;
+  color: #777;
+  margin-bottom: 5px;
+}
+
+.project-details a {
+  color: #10c0d4;
+  text-decoration: none;
+}
+
+.project-title{
+  font-size: 14px;
+}
+
+.project-details a:hover {
+  text-decoration: underline;
+}
+
+
+.certifications {
+  margin-top: 20px;
+}
+
+
+
+.certifications .section-title {
+  font-size: 14px;
+  font-weight: bold;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.certification-item {
+  margin-bottom: 15px;
+}
+
+.certification-item h4 {
+  font-size: 13.5px;
+  font-weight: bold;
+  margin-bottom: 3px;
+  color: #111;
+}
+
+.cert-details {
+  font-size: 12px;
+  color: #777;
+  font-style: italic;
+}
+
+
+.cert-details .date {
+  font-style: normal;
+  color: #333;
+}
+
+ul {
+  list-style-type: none;
+  padding-left: 0;
+  margin: 5px 0;
+}
+
+li {
+  font-size: 12px;
+  margin-bottom: 5px;
+  position: relative;
+  padding-left: 15px;
+}
+
+li::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  color: #333;
+  font-size: 12px;
+}
+
+/* Footer */
+.interests {
+  margin-top: 20px;
+}
+
+.interests-list {
+  list-style: none;
+  padding-left: 0;
+  margin-top: 10px;
+}
+
+.interest-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+
+
+.interest-text {
+  font-size: 12px;
+  color: #333;
+}
+
+.languages {
+  margin-top: 20px;
+}
+
+.languages-list {
+  list-style: none;
+  padding-left: 0;
+  margin-top: 10px;
+}
+
+.language-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+
+
+.language-text {
+  font-size: 12px;
+  color: #333;
+}
+
+.capitalize{
+  text-transform: capitalize;
+}
+             
+                                   
+                                   """)
+                
+            elif template_id == "template5":
+                page.add_style_tag(content="""
+                
+                
+
+.resume-container {
+width: 170mm;
+  margin: 0 auto;
+    min-height: 297mm;
+  padding: 30px;
+  background-color: white;
+  color: #333;
+  box-sizing: border-box;
+}
+
+
+.resume-inner {
+  padding: 10mm; 
+  box-sizing: border-box;
+}
+
+/* Header */
+.resume-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.resume-header h1 {
+  font-size: 24px;
+  font-weight: bold;
+  color: #0072ce;
+}
+
+.resume-header h2 {
+  font-size: 16px;
+  font-weight: normal;
+  margin-top: 4px;
+}
+
+.contact-info {
+  font-size: 13px;
+  margin-top: 8px;
+  color: #444;
+}
+
+.contact-info span:not(:last-child)::after {
+  content: "\2022";
+  margin: 0 8px;
+}
+
+/* Section */
+.resume-section {
+  margin-top: 20px;
+}
+
+.section-title {
+  font-size: 14px;
+  font-weight: bold;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  border-bottom: 1px solid #ccc;
+  padding-bottom: 4px;
+  color: #0072ce;
+
+}
+
+.summary-section {
+  margin-top: 20px;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+}
+
+.section-title-centered {
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e90ff; /* blue color */
+  border-bottom: 1px solid #1e90ff;
+  /* padding-bottom: 6px; */
+  margin-bottom: 10px;
+}
+
+
+.summary-text {
+  font-size: 12px;
+  color: #333;
+}
+
+
+/* Achievements Grid */
+.achievements{
+    margin-bottom: 14px;
+}
+
+.achievements-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.achievement-box {
+  font-size: 12px;
+}
+
+.achievement-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #1e90ff;
+  margin-bottom: 4px;
+}
+
+.achievement-desc {
+  font-size: 12px;
+  color: #333;
+  line-height: 1.4;
+}
+/* Experience */
+.experience-section {
+  margin-bottom: 20px;
+}
+
+.experience-item {
+  margin-bottom: 20px;
+}
+
+.experience-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 5px;
+}
+
+.left-info .company {
+  font-weight: bold;
+  font-size: 14px;
+  color: #333;
+}
+
+.left-info .job-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: #1e90ff;
+}
+
+.right-info {
+  text-align: right;
+  font-size: 12px;
+  color: #444;
+}
+
+.experience-details {
+  list-style-type: disc;
+  margin-top: 5px;
+}
+
+.experience-details li {
+  font-size: 13px;
+  margin-bottom: 5px;
+  line-height: 1.5;
+    list-style-type: disc;
+}
+
+
+/* Education */
+.education-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.education-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.edu-left {
+  max-width: 70%;
+}
+
+.edu-school {
+  font-size: 14px;
+  font-weight: 600;
+  color: #000;
+  margin-bottom: 2px;
+}
+
+.edu-degree {
+  font-size: 13px;
+  color: #1e90ff;
+}
+
+.edu-right {
+  text-align: right;
+  font-size: 12px;
+  color: #555;
+}
+
+.edu-location {
+  margin-bottom: 2px;
+}
+
+
+/* skill section */
+.skills-section {
+  margin-bottom: 20px;
+}
+
+.skills-inline {
+  font-size: 13px;
+  color: #333;
+  line-height: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px; /* space between skill groups */
+}
+
+.dot-separator {
+  font-weight: bold;
+  color: #333; /* darker dot */
+  margin: 0 6px;
+}
+
+
+/* languages */
+.language-section {
+  margin-top: 20px;
+}
+
+.language-list {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); /* 3 columns */
+  gap: 0 10rem;
+}
+
+.language-item {
+ 
+  padding: 0.2rem 1rem;
+
+  font-size: 13px;
+  color: #1f2937; /* text-gray-800 */
+  text-align: center;
+  font-weight: 500;
+}
+
+
+/* interest section */
+
+/* Interest Section */
+.interest-section {
+  margin-top: 20px;
+}
+
+.interest-list {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+}
+
+
+.interest-item {
+  display: flex;
+  align-items: flex-start;
+  padding: 0 8px;
+  color: #007bff;
+  font-size: 13px;
+  line-height: 1;
+}
+
+.bullet-dot {
+  width: 3px;
+  height: 3px;
+  margin-right: 6px;
+  margin-top: 6px;
+  background-color: #007bff;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+
+/* Certification Section */
+.certification-section {
+  margin-top: 20px;
+  margin-bottom: 14px;
+}
+
+.certification-list {
+  display: flex;
+  flex-direction: column;
+  padding: 0 8px;
+}
+
+.certification-item {
+  font-size: 12px;
+  color: #333;
+  line-height: 1;
+}
+
+
+/* Optional: Utility classes */
+.date {
+  font-weight: normal;
+  color: #000;
+}
+
+.location {
+  color: #555;
+}
+
+                                   
+                                   """)
+                
+            elif template_id == "template6":
+                page.add_style_tag(content="""
+
+.resume-inner {
+  padding: 0 10mm;  /* reliable in PDF */
+  box-sizing: border-box;
+}
+
+
+.template6-resume {
+  margin: 0 auto;
+  color: #333;
+  width: 170mm;
+    min-height: 297mm;
+  background-color: white;
+  box-sizing: border-box;
+}
+
+/* HEADER */
+.template6-header {
+  background-color: #e94b35;
+  color: white;
+  padding: 20px;
+  text-align: center;
+    border: 2px solid black;
+}
+
+.template6-header h1 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.template6-contact-info {
+  font-size: 12px;
+  margin-top: 8px;
+}
+
+.template6-contact-info span {
+  margin: 0 6px;
+}
+
+/* SECTION LAYOUT */
+.template6-section {
+  display: flex;
+  border-bottom: 1px solid #ddd;
+  padding: 15px 0;
+}
+
+.template6-section:last-child {
+  border-bottom: none;
+}
+
+.template6-left {
+  width: 178px;
+  font-weight: bold;
+  color: #e94b35;
+  font-size: 13px;
+  text-transform: uppercase;
+}
+
+.template6-right {
+  flex: 1;
+  font-size: 13px;
+}
+
+/* EXPERIENCE */
+.template6-projects .template6-experience {
+  margin-bottom: 15px;
+}
+
+.template6-job-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.template6-date {
+  font-weight: normal;
+  font-size:10px;
+}
+
+.template6-projects .template6-company {
+  font-style: italic;
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
+.template6-experience ul {
+  margin: 0;
+}
+
+.template6-experience li {
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+/* SKILLS */
+.template6-skills-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  font-size: 12px;
+}
+
+.template6-skill-item {
+  margin-bottom: 4px;
+}
+
+/* EDUCATION */
+.template6-education-degree {
+  font-weight: bold;
+  font-size: 13px;
+}
+
+.template6-school {
+  font-style: italic;
+  font-size: 12px;
+}
+
+
+/* certificaton section style  */
+/* CERTIFICATIONS */
+.template6-certification {
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
+.template6-certification:last-child {
+  margin-bottom: 0;
+}
+
+/* achievement section */
+/* ACHIEVEMENTS */
+.template6-achievement {
+  margin-bottom: 10px;
+  font-size: 13px;
+}
+
+.template6-achievement-title {
+  font-weight: bold;
+  margin-bottom: 3px;
+}
+
+.template6-achievement-desc {
+  font-size: 12px;
+  color: #555;
+  margin-left: 10px;
+}
+body{
+  margin:0;
+  padding:0;
+}
+
+
+
+
+
+                                     """)
 
             pdf_options = {
     "path": output_path,
     "format": "A4",
     "print_background": True,
     "margin": {
-        "top": "10mm",    # Increased from 0 to 10mm
-        "right": "10mm",  # Added right margin
-        "bottom": "10mm", # Added bottom margin
-        "left": "10mm"    # Added left margin
+        "top": "0mm",    # Increased from 0 to 10mm
+        "right": "0mm",  # Added right margin
+        "bottom": "0mm", # Added bottom margin
+        "left": "0mm"    # Added left margin
     },
      # This ensures CSS @page rules are respected
 }
@@ -1084,484 +1937,3 @@ body {
         return {"message": f"PDF generation failed: {str(e)}"}, 500
 
 
-@resume_bp.route('/download_pdfee', methods=['POST'])
-def download_pdfee():
-    try:
-        data = request.get_json()
-        html_content = data.get('html')
-        template = data.get('template', 'google')
-
-        if not html_content:
-            return jsonify({"error": "HTML content required"}), 400
-
-        # Base styles - Applied to every template
-        base_styles = """
-        @page {
-            size: A4;
-            margin: 0;
-        }
-
-        body {
-            margin: 0;
-            padding: 0;
-            background: white;
-            font-family: Arial, sans-serif;
-            line-height: 1.5;
-            color: #333;
-        }
-
-        @media print {
-            body, html {
-                width: 210mm;
-                height: 297mm;
-            }
-
-            .no-print {
-                display: none;
-            }
-        }
-        """
-
-        # Template-specific styles
-        template_styles = {
-            'google': """
-/* Utility classes */
-.fs-24px { font-size: 24px; }
-.fs-13px { font-size: 13px; }
-.fs-11px { font-size: 11px; }
-.text-justify { text-align: justify; }
-.mt-1 { margin-top: 0.25rem; }
-.mt-2 { margin-top: 0.5rem; }
-.mt-6 { margin-top: 1.5rem; }
-.text-blue { color: #2563eb; }
-.hover-underline:hover { text-decoration: underline; }
-.mr-10px {
-  margin-right: 15px;
-}
-
-/* Resume Layout */
-.resume-t2 {
-  width: 170mm;
-  min-height: 297mm;
-  margin: 0 auto;
-  background: #fff;
-  padding: 15mm;
-  box-sizing: border-box;
-}
-
-.header-t2 {
-  text-align: center;
-  border-bottom: 2px solid #000;
-  padding-bottom: 10px;
-  margin-bottom: 20px;
-}
-
-.header-t2 h1 {
-  font-size: 2.0rem;
-  margin: 0;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-}
-
-.subtitle-t2 {
-  font-size: 1.0rem;
-  font-style: italic;
-  margin: 5px 0;
-}
-
-.contact-info-t2 {
-  font-size: 0.7rem;
-  margin-top: 5px;
-}
-
-.section-t2 {
-  margin-bottom: 15px;
-}
-
-.section-title-t2 {
-  font-size: 1.1rem;
-  font-weight: bold;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  border-bottom: 1px solid #ccc;
-  padding-bottom: 5px;
-  margin-bottom: 10px;
-}
-
-.subsection-title-t2 {
-  font-size: 1rem;
-  font-weight: bold;
-  margin-bottom: 5px;
-}
-
-.section-t2.skills-section ul {
-  display: grid;
-  grid-template-rows: repeat(2, auto); /* Two rows */
-  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); /* Dynamic columns, min 100px per skill */
-  gap: 0.5rem; /* Spacing between items */
-  list-style: disc;
-  list-style-position: inside;
-  padding-left: 20px; /* Matches existing padding */
-  margin: 4px 0; /* Matches existing margin */
-  font-size: 11px; /* Matches .fs-11px */
-}
-
-.section-t2.skills-section ul li {
-  margin-bottom: 2px; /* Matches .details-t2 li styling */
-  line-height: 1.2; /* Matches .details-t2 li styling */
-}
-
-
-.item-t2 {
-  margin-bottom: 15px;
-}
-
-.item-t2 h3 {
-  margin: 0;
-  font-size: 1.0rem;
-}
-
-.item-t2 p {
-  margin: 2px 0;
-  font-size: 0.8rem;
-}
-
-.details-t2 {
-  font-style: italic;
-  color: #444;
-  margin-top: 5px;
-  font-size: 13px;
-}
-
-.details-t2 ul {
-  padding-left: 20px;
-  margin: 5px 0;
-}
-
-.details-t2 li {
-  margin-bottom: 3px;
-}
-
-.skills-container-t2 {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.skill-tag-t2 {
-  font-size: 13px;
-  background: #f1f1f1;
-  padding: 2px 8px;
-  border: 1px solid #ddd;
-}
-
-.two-column-t2 {
-  display: flex;
-  justify-content: space-between;
-}
-
-.two-column-t2 > div {
-  width: 48%;
-}
-
-            """,
-
-            'meta': """
-.meta-container {
-  font-family: Arial, sans-serif;
-}
-
-.meta-name {
-  font-size: 24px;
-  text-align: center;
-}
-
-.meta-contact,
-.meta-links {
-  font-size: 10px;
-  text-align: center;
-}
-
-.meta-section {
-  margin-top: 15px;
-  margin-bottom: 15px;
-}
-
-.meta-section-heading {
-  font-size: 13px;
-  text-align: center;
-  font-weight: bold;
-}
-
-.meta-list {
-  font-size: 11px;
-  text-align: justify;
-}
-
-.meta-item {
-  font-size: 11px;
-  margin-bottom: 10px;
-}
-
-.meta-text {
-  font-size: 11px;
-  text-align: justify;
-}
-
-.meta-bullets {
-  font-size: 11px;
-  text-align: justify;
-  padding-left: 20px;
-}
-
-.meta-dates {
-  font-weight: bold;
-}
-
-.meta-flex {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-            """,
-
-            'microsoft': """
-           /* General Container */
-.resume-container {
-  background: white;
-  padding: 2.5rem;
-  font-family: sans-serif;
-  color: #2d3748;
-  max-width: 64rem;
-  margin: 0 auto;
-}
-
-/* Header */
-.resume-header {
-  text-align: center;
-  margin-bottom: 1rem;
-}
-
-.resume-header h1 {
-  font-size: 24px;
-  font-weight: bold;
-  color: #2563eb;
-  text-transform: uppercase;
-}
-
-.resume-header p {
-  font-size: 10px;
-  color: #718096;
-  margin-top: 0.5rem;
-}
-
-.resume-header span {
-  margin: 0 0.5rem;
-}
-
-/* Section Titles */
-.section-title {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 1rem 0;
-    width: 100%;
-}
-
-.section-title h2 {
-    margin: 0 1rem;
-    font-size: 0.75rem;
-    font-weight: bold;
-    text-transform: uppercase;
-    color: #2563EB; /* Tailwind blue-600 */
-    letter-spacing: 0.1em;
-    white-space: nowrap;
-}
-
-.section-title span {
-    flex-grow: 1;
-    border-top: 1px solid #60A5FA; /* Tailwind blue-400 */
-}
-
-.section-title {
-    width: 100%;
-    margin: 1rem 0;
-    text-align: center;
-    position: relative;
-}
-
-.section-title h2 {
-    display: inline-block;
-    margin: 0 1rem;
-    font-size: 0.75rem;
-    font-weight: bold;
-    text-transform: uppercase;
-    color: #2563EB;
-    letter-spacing: 0.1em;
-    white-space: nowrap;
-    background: white;
-    padding: 0 5px;
-    position: relative;
-    z-index: 2;
-}
-
-.section-title::before,
-.section-title::after {
-    content: "";
-    display: block;
-    border-top: 1px solid #60A5FA;
-    position: absolute;
-    top: 50%;
-    width: 45%;
-}
-
-.section-title::before {
-    left: 0;
-}
-
-.section-title::after {
-    right: 0;
-}
-
-
-/* Summary */
-.summary-text {
-  font-size: 11px;
-  text-align: justify;
-}
-
-/* Work/Internship */
-.work-item {
-  margin-bottom: 1.25rem;
-}
-
-.work-item h3 {
-  font-size: 1rem;
-  font-weight: bold;
-}
-
-.work-item p {
-  font-size: 0.875rem;
-  color: #4a5568;
-}
-
-.work-dates {
-  font-size: 0.875rem;
-  color: #718096;
-  white-space: nowrap;
-  padding-left: 1rem;
-}
-
-.work-list {
-  list-style: disc;
-  padding-left: 1.25rem;
-  margin-top: 0.25rem;
-  font-size: 0.875rem;
-  color: #4a5568;
-}
-
-/* Skills Grid */
-.skills-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  column-gap: 3rem;
-  font-size: 0.875rem;
-  color: #4a5568;
-}
-
-.skills-grid ul {
-  list-style: disc;
-  list-style-position: inside;
-  margin-top: 0.25rem;
-  margin-bottom: 0.25rem;
-}
-
-/* Projects */
-.project-item {
-  margin-bottom: 0.75rem;
-  font-size: 11px;
-}
-
-.project-item h3 {
-  font-size: 1rem;
-  font-weight: bold;
-}
-
-.project-tech {
-  font-style: italic;
-  color: #718096;
-  margin-bottom: 0.25rem;
-}
-
-.project-points {
-  list-style: disc;
-  padding-left: 1.25rem;
-  color: #4a5568;
-}
-
-/* Education */
-.education-item {
-  font-size: 11px;
-}
-
-.education-item p {
-  margin: 0.25rem 0;
-}
-
-.education-item .degree {
-  font-weight: bold;
-  font-size: 1rem;
-}
-
-/* Certifications, Languages, Interests, Achievements */
-.list-style {
-  list-style: disc;
-  list-style-position: inside;
-  font-size: 11px;
-  color: #4a5568;
-}
-
-.achievement-item {
-  margin-bottom: 0.75rem;
-  font-size: 11px;
-}
-
-.achievement-item h3 {
-  font-weight: bold;
-  font-size: 1rem;
-}
-
-
-            """
-        }
-
-        selected_styles = template_styles.get(template, "")
-
-        full_html = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="UTF-8">
-            <style>
-                {base_styles}
-                {selected_styles}
-            </style>
-        </head>
-        <body>
-            {html_content}
-        </body>
-        </html>
-        """
-
-        pdf_bytes = pdfkit.from_string(full_html, False, options=options,configuration=config)
-
-        return send_file(
-            BytesIO(pdf_bytes),
-            mimetype='application/pdf',
-            as_attachment=True,
-            download_name='resume.pdf'
-        )
-
-    except Exception as e:
-        return jsonify({"error": "PDF generation failed", "message": str(e)}), 500

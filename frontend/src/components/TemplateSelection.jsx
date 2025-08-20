@@ -3,6 +3,9 @@ import Microsoft from "./templates/Microsoft";
 import Google from "./templates/Google";
 import Meta from "./templates/Meta";
 import useResumeStore from "../store/useResumeStore"; // Import useResumeStore to access manualForm and resumeId
+import Template4 from "./templates/Template4";
+import Template5 from "./templates/Template5";
+import Template6 from "./templates/Template6"
 
 // Dummy data for template previews
 const dummyData = {
@@ -127,6 +130,23 @@ const templates = [
     description: "Elegant, serif font style",
     PreviewComponent: Meta,
   },
+  {
+      id: "template4",
+    name: "simple",
+    description: "non-ats",
+    PreviewComponent: Template4,
+  },
+  {
+    id: "template5",
+    name:"management",
+    description:"",
+    PreviewComponent: Template5,
+  },{
+    id: "template6",
+    name: "marketing manager",
+    description:"marketing manager ",
+    PreviewComponent: Template6,
+  }
 ];
 
 export default function TemplateSelection() {

@@ -36,6 +36,7 @@ const Meta = forwardRef(({ data = {} }, ref) => {
   return (
     <div ref={ref} className="meta-container">
       {/* Header */}
+      <div className="resume-inner">
       <header className="meta-header">
         <h1 className="meta-name">{Name}</h1>
         <div className="meta-contact">
@@ -252,6 +253,7 @@ const Meta = forwardRef(({ data = {} }, ref) => {
           </ul>
         </section>
       )}
+      </div>
     </div>
   );
 });

@@ -47,7 +47,7 @@ const Google = forwardRef(({ data = {} }, ref) => {
             <strong>Phone:</strong> {phone}
           </span>
           <span className="mr-2">
-            <strong>Email:</strong> {email}
+            <strong>Email:</strong> {email}  
           </span>
           {linkedin && (
             <a href={linkedin} className="mr-2 text-blue-500 hover:underline">

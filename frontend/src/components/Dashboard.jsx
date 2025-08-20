@@ -16,6 +16,8 @@ import useResumeStore from "../store/useResumeStore"; // Import useResumeStore t
 import Google from "./templates/Google";
 import Meta from "./templates/Meta";
 import Microsoft from "./templates/Microsoft";
+import Template4 from "./templates/Template4";
+import Template5 from "./templates/Template5";
 
 const Dashboard = () => {
   const [editingResumeId, setEditingResumeId] = useState(null);
@@ -89,6 +91,10 @@ const Dashboard = () => {
         return <Meta {...props} />;
       case "microsoft":
         return <Microsoft {...props} />;
+      case "template4":
+        return <Template4 {...props}/>
+      case "template5":
+        return <Template5 {...props}/>
       default:
         return (
           <div className="text-center text-gray-500 py-10 px-4">

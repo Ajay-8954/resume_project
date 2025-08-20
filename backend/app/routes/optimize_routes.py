@@ -288,7 +288,7 @@ def parse_final_resume_to_json():
             ],
             "internship": [
                 {{
-                    "jobTitle": "Job Title",
+                    "role": "Job Title",
                     "company": "Company Name",
                     "startDate": "Month Year",
                     "endDate": "Month Year",

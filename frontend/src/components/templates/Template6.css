@@ -1,0 +1,151 @@
+body{
+  margin:0;
+  padding:0;
+}
+
+.resume-inner {
+  padding: 10mm;  /* reliable in PDF */
+  box-sizing: border-box;
+}
+
+
+.template6-resume {
+    max-width: 170mm;
+  min-height: 297mm;
+  margin: 0 auto;
+  font-family: Arial, sans-serif;
+  color: #333;
+    box-sizing: border-box;
+}
+
+/* HEADER */
+.template6-header {
+  background-color: #e94b35;
+  color: white;
+  text-align: center;
+}
+
+.template6-header h1 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.template6-contact-info {
+  font-size: 12px;
+  margin-top: 8px;
+}
+
+.template6-contact-info span {
+  margin: 0 6px;
+}
+
+/* SECTION LAYOUT */
+.template6-section {
+  display: flex;
+  border-bottom: 1px solid #ddd;
+  padding: 15px 0;
+}
+
+.template6-section:last-child {
+  border-bottom: none;
+}
+
+.template6-left {
+  width: 178px;
+  font-weight: bold;
+  color: #e94b35;
+  font-size: 13px;
+  text-transform: uppercase;
+}
+
+.template6-right {
+  flex: 1;
+  font-size: 13px;
+}
+
+/* EXPERIENCE */
+.template6-projects .template6-experience {
+  margin-bottom: 15px;
+}
+
+.template6-job-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.template6-date {
+  font-weight: normal;
+  font-size:10px;
+}
+
+.template6-projects .template6-company {
+  font-style: italic;
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
+.template6-experience ul {
+  margin: 0;
+}
+
+.template6-experience li {
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+/* SKILLS */
+.template6-skills-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  font-size: 12px;
+}
+
+.template6-skill-item {
+  margin-bottom: 4px;
+}
+
+/* EDUCATION */
+.template6-education-degree {
+  font-weight: bold;
+  font-size: 13px;
+}
+
+.template6-school {
+  font-style: italic;
+  font-size: 12px;
+}
+
+
+/* certificaton section style  */
+/* CERTIFICATIONS */
+.template6-certification {
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
+.template6-certification:last-child {
+  margin-bottom: 0;
+}
+
+/* achievement section */
+/* ACHIEVEMENTS */
+.template6-achievement {
+  margin-bottom: 10px;
+  font-size: 13px;
+}
+
+.template6-achievement-title {
+  font-weight: bold;
+  margin-bottom: 3px;
+}
+
+.template6-achievement-desc {
+  font-size: 12px;
+  color: #555;
+  margin-left: 10px;
+}
+

@@ -26,17 +26,21 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
 
-                  <Route element={<ProtectedRoute />}>
-          <Route path="/dashboard" element={<Dashboard />} />
-          {/* Add other protected routes here */}
-        </Route>
+            <Route element={<ProtectedRoute />}>
+              <Route path="/dashboard" element={<Dashboard />} />
+              {/* Add other protected routes here */}
+            </Route>
 
+            <Route element={<ProtectedRoute />}>
+              <Route
+                path="/builder/:templateId"
+                element={<TemplateBuilderWrapper />}
+              />
+            </Route>
 
-            <Route
-              path="/builder/:templateId"
-              element={<TemplateBuilderWrapper />}
-            />
+            <Route element={<ProtectedRoute />}>
             <Route path="/analyze" element={<AnalyzeAtsScore />} />
+            </Route>
           </Routes>
         </div>
 

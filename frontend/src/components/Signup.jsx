@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { motion } from 'framer-motion';
+import GoogleSignInButton from '../components/GoogleSignIn/GoogleSignInButton'; 
 
 const Signup = () => {
   const [username, setUsername] = useState('');
@@ -244,6 +245,21 @@ const Signup = () => {
             )}
           </motion.button>
         </form>
+
+               {/* Google Sign-Up Option */}
+        <div className="text-center space-y-2">
+          <p className="text-gray-600">Or sign up with</p>
+          <GoogleSignInButton
+            onSuccess={(user) => {
+              // No immediate redirect; let the user log in or handle differently
+              setError(''); // Clear errors on success
+              setSuccess(true); // Show success message
+              setTimeout(() => navigate('/login'), 2000); // Redirect to login
+            }}
+            onError={(errorMsg) => setError(errorMsg)} // Handle errors
+          />
+        </div>
+
 
         <div className="text-center">
           <motion.button

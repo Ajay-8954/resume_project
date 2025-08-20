@@ -16,6 +16,9 @@ import TemplateSelection from "./TemplateSelection";
 import axios from "axios";
 import juice from "juice";
 import useResumeStore from "../store/useResumeStore";
+import Template4 from "./templates/Template4";
+import Template5 from "./templates/Template5";
+import Template6 from "./templates/Template6";
 
 export default function TemplateBuilder({
   selectedTemplate,
@@ -35,6 +38,7 @@ export default function TemplateBuilder({
     dataToBuild,
     reset,
   } = useResumeStore();
+  
 
   // Refs for preview and scrolling
   const previewRef = useRef();
@@ -146,6 +150,17 @@ export default function TemplateBuilder({
   useEffect(() => {
     console.log("Current manualForm:", JSON.stringify(manualForm, null, 2));
   }, [manualForm]);
+
+
+  useEffect(() => {
+  const handleBeforeUnload = () => {
+    console.log("Clearing state before page unload");
+    reset();
+  };
+
+  window.addEventListener("beforeunload", handleBeforeUnload);
+  return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+}, [reset]);
 
   // Merge dataToBuild with manualForm
   useEffect(() => {
@@ -366,6 +381,13 @@ export default function TemplateBuilder({
         return <Meta {...props} ref={previewRef} />;
       case "microsoft":
         return <Microsoft {...props} ref={previewRef} />;
+      case "template4":
+        return <Template4 {...props} ref={previewRef}/>
+
+      case "template5":
+        return <Template5 {...props} ref={previewRef}/>
+      case "template6":
+        return <Template6 {...props} ref={previewRef}/>
       default:
         return <Microsoft {...props} ref={previewRef} />;
     }

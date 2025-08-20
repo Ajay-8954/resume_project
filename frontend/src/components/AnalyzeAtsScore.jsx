@@ -480,7 +480,7 @@ export default function AnalyzeAtsScore() {
         formData.append("jd_text", jdText);
 
         try {
-            const analysisRes = await fetch("http://localhost:5000/analyze_resume", { method: "POST", body: formData });
+            const analysisRes = await fetch("http://localhost:5000/api/analyze_resume", { method: "POST", body: formData });
             const analysisData = await analysisRes.json();
 
             if (analysisRes.ok) {
@@ -490,7 +490,7 @@ export default function AnalyzeAtsScore() {
                 setParsedResumeText(newParsedText);
                 addScoreToHistory(analysisData.overall_score);
 
-                const gapsRes = await fetch("http://localhost:5000/get_keyword_gaps", {
+                const gapsRes = await fetch("http://localhost:5000/api/get_keyword_gaps", {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ jd_text: jdText, resume_text: newParsedText })
@@ -513,7 +513,7 @@ export default function AnalyzeAtsScore() {
     const handleGenerateQuestions = async () => {
         setError(null);
         try {
-            const res = await fetch("http://localhost:5000/generate_questions", {
+            const res = await fetch("http://localhost:5000/api/generate_questions", {
                 method: "POST",
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ jd_text: jdText, resume_text: parsedResumeText })
@@ -542,7 +542,7 @@ export default function AnalyzeAtsScore() {
                 setIsLoading(false);
                 return;
             }
-            const res = await fetch("http://localhost:5000/optimize_resume", {
+            const res = await fetch("http://localhost:5000/api/optimize_resume", {
                 method: "POST",
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
@@ -580,7 +580,7 @@ export default function AnalyzeAtsScore() {
         }  
 
         try {
-            const res = await fetch("http://localhost:5000/analyze_resume", { method: "POST", body: formData });
+            const res = await fetch("http://localhost:5000/api/analyze_resume", { method: "POST", body: formData });
             const data = await res.json();
             if (!res.ok) {
                 setError(data.error || "Re-check failed during analysis.");
@@ -667,7 +667,7 @@ export default function AnalyzeAtsScore() {
 
         try {
           // We call the NEW, correct endpoint
-          const res = await fetch("http://localhost:5000/parse_final_resume_to_json", {
+          const res = await fetch("http://localhost:5000/api/parse_final_resume_to_json", {
             method: "POST",
             body: formData, // Send the form data containing the final .docx file
           });

@@ -14,6 +14,7 @@ export default function ResumeForm() {
     toggle,
     setToggle,
   } = useResumeStore();
+    const reset = useResumeStore((state) => state.reset);
 
   // Default to fresher
   const [uploadLoading, setUploadLoading] = useState(false);
@@ -481,7 +482,7 @@ export default function ResumeForm() {
       manualForm.certifications[manualForm.certifications.length - 1] || {};
     if (
       manualForm.certifications.length === 0 ||
-      (lastCertification.title &&
+      (lastCertification.name &&
         lastCertification.issuer &&
         lastCertification.date)
     ) {
@@ -490,7 +491,7 @@ export default function ResumeForm() {
         certifications: [
           ...(prev.certifications || []),
           {
-            title: "",
+            name: "",
             issuer: "",
             date: "",
           },
@@ -709,8 +710,11 @@ export default function ResumeForm() {
     console.log("Current manualForm state:", manualForm);
   }, [manualForm]);
 
-  // Month/Year Picker Component
 
+  // on reload , the manual form fields should be empty
+
+  
+  // Month/Year Picker Component
   const MonthYearPicker = ({ label, value, onChange, required, disabled }) => {
     const parseDate = (value) => {
       console.log(`Parsing date for ${label}:`, value); // Debug log
@@ -2757,7 +2761,7 @@ export default function ResumeForm() {
                 manualForm.certifications.length > 0 &&
                 (!manualForm.certifications[
                   manualForm.certifications.length - 1
-                ]?.title ||
+                ]?.name ||
                   !manualForm.certifications[
                     manualForm.certifications.length - 1
                   ]?.issuer ||

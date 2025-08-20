@@ -4,6 +4,8 @@ from datetime import datetime, timezone, timedelta
 from functools import wraps
 from app.utils.auth_utils import token_required
 from .. import bcrypt
+from google.oauth2 import id_token
+from google.auth.transport import requests
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -127,3 +129,71 @@ def validate_token():
         response.headers.add('Access-Control-Allow-Origin', 'http://localhost:5173')
         response.headers.add('Access-Control-Allow-Credentials', 'true')
         return response, 401
+
+
+# Google Sign-In Route
+@auth_bp.route('/google', methods=['POST'])
+def google_auth():
+    try:
+        id_token_str = request.json.get('id_token')
+        if not id_token_str:
+            return jsonify({'error': 'No ID token provided'}), 400
+
+        # Verify the ID token with Google
+        CLIENT_ID = '617265112177-2f6l38vl5c7t8cmeief28p1ik6ecboj9.apps.googleusercontent.com'
+        idinfo = id_token.verify_oauth2_token(id_token_str, requests.Request(), CLIENT_ID)
+
+        # Extract user info
+        email = idinfo['email']
+        name = idinfo.get('name', email.split('@')[0])  # Fallback username if name not provided
+        user_id = idinfo['sub']
+
+        # Check if user exists in MongoDB
+        db = current_app.db
+        existing_user = db.users.find_one({'email': email})
+
+        if existing_user:
+            # Update username if name changed
+            if existing_user['username'] != name:
+                db.users.update_one(
+                    {'email': email},
+                    {'$set': {'username': name}}
+                )
+        else:
+            # Create new user (no password since it's Google auth)
+            db.users.insert_one({
+                'username': name,
+                'email': email,
+                'createdAt': datetime.now(timezone.utc)
+            })
+
+        # Generate JWT token
+        token = jwt.encode({
+            'email': email,
+            'exp': datetime.now(timezone.utc) + timedelta(hours=24)
+        }, current_app.config['SECRET_KEY'], algorithm="HS256")
+
+        # Send response with cookie
+        response = make_response(jsonify({
+            'message': 'Login successful',
+            'user': {
+                'email': email,
+                'username': name
+            }
+        }))
+        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:5173')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        response.set_cookie(
+            'token',
+            token,
+            httponly=True,
+            secure=False,
+            samesite='Lax',
+            max_age=86400  # 24 hours
+        )
+        return response
+    except ValueError as e:
+        return jsonify({'error': 'Invalid Google token'}), 401
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
