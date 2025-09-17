@@ -36,8 +36,8 @@ const Google = forwardRef(({ data = {} }, ref) => {
   return (
     <div
       ref={ref}
-      className="resume-t2 w-full max-w-[170mm] mx-auto p-4 text-gray-900"
-      style={{ minHeight: "297mm" }}
+      className="resume-t2 "
+    
     >
       {/* Header */}
       <div className="header-t2 text-center pb-3">

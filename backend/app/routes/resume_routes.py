@@ -15,6 +15,7 @@ from app.data.languages import LANGUAGES
 from playwright.sync_api import sync_playwright
 from app.data.domain_mapping import DOMAIN_KEYWORDS  # <-- import here
 import json
+import requests
 
 
 # 27/07
@@ -23,8 +24,7 @@ UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.dirname(__file__)), "app", 
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
-path_wkhtmltopdf = r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe'
-config = pdfkit.configuration(wkhtmltopdf=path_wkhtmltopdf)
+OLLAMA_BASE_URL= os.getenv("OLLAMA_BASE_URL")
 
 options = {
     'enable-local-file-access': None,
@@ -164,9 +164,9 @@ def save_resume(current_user):
 @resume_bp.route("/enhance-field", methods=["POST"])
 def enhance_field():
     data = request.json
-    field_type = data.get('fieldType')  # 'experience', 'project', 'achievement', etc.
+    field_type = data.get('fieldType')
     text = data.get('text', '')
-    context = data.get('context', {})  # Additional context like job title, company, etc.
+    context = data.get('context', {})
 
     if not field_type or not text:
         return jsonify({"error": "Field type and text are required"}), 400
@@ -181,12 +181,14 @@ Job Title: {context.get('jobTitle', '')}
 Company: {context.get('company', '')}
         
 Please:
-1. Use strong action verbs (e.g., "Developed", "Led", "Implemented")
-2. Quantify achievements only if the input contains specific metrics
-3. Use the bullet point character '•' for all bullet points
-4. Keep it concise (2-3 bullet points)
-5. Make it more professional and impactful
-        
+1. Return ONLY the enhanced description, no introductory text
+2. Use strong action verbs (e.g., "Developed", "Led", "Implemented")
+3. Quantify achievements only if the input contains specific metrics
+4. Use the bullet point character '•' for all bullet points
+5. Keep it concise (2-3 bullet points)
+6. Make it more professional and impactful
+7. DO NOT ADD any text like "Here is the improved version" or "Enhanced description:"
+
 Return only the enhanced description without any additional text.""",
         
         "project": f"""Enhance this project description for a resume:
@@ -196,108 +198,114 @@ Technologies: {context.get('tech', '')}
 Current description: {text}
         
 Please:
-1. Highlight technical challenges and solutions
-2. Showcase specific contributions
-3. Use bullet points if not already
-4. Keep it professional and concise
-5. Use the bullet point character '•' for all bullet points
+1. Return ONLY the enhanced description, no introductory text
+2. Highlight technical challenges and solutions
+3. Showcase specific contributions
+4. Use bullet points if not already
+5. Keep it professional and concise
+6. Use the bullet point character '•' for all bullet points
+7. Keep it concise (3-4 bullet points , 1 or 1.5 lines of sentences not more than that)
+8. DO NOT ADD any text like "Here is the improved version" or "Enhanced description:"
         
 Return only the enhanced description.""",
         
-        "achievement": f"""Improve this achievement description:
+        "achievement": f"""IMPROVE THIS ACHIEVEMENT DESCRIPTION - RETURN ONLY THE ENHANCED TEXT, NO INTRODUCTORY TEXT AND NO TITLE AND NO HEADING:
         
 Achievement: {context.get('title', '')}
 Current description: {text}
         
 Please:
-1. Make it more impactful
-2. Quantify achievements only if the input contains specific metrics
-3. Use the bullet point character '•' if using bullet points
-4. Keep it concise (1-2 sentences or bullet points)
-5. Use professional language
+1. Return ONLY the enhanced description, no introductory text
+2. Make it more impactful
+3. Quantify achievements only if the input contains specific metrics
+4. Use the bullet point character '•' if using bullet points
+5. Keep it concise (1-2 sentences or bullet points)
+6. Use professional language
+7. DO NOT ADD any text like "Here is the improved version" or "Enhanced description:"
         
 Return only the enhanced description.""",
         
-        "summary": f"""Enhance this professional summary:
-        
-Current summary: {text}
-Job Title: {context.get('jobTitle', '')}
-Skills: {', '.join(context.get('skills', []))}
-        
-Please:
-1. Keep it concise (3-4 sentences)
-2. Include relevant keywords
-3. Highlight key achievements
-4. Make it more compelling
-        
-Return only the enhanced summary.""",
-
-
- 
- "internship": f"""Enhance this internship description for a resume:
+        "internship": f"""Enhance this internship description for a resume:
  
 Current description: {text}
 Role: {context.get('role', '')}
 Company: {context.get('company', '')}
  
 Please:
-1. Use action verbs to highlight contributions
-2. Emphasize skills developed
-3. Use the bullet point character '•' for all bullet points
-4. Quantify achievements only if the input contains specific metrics
-5. Keep it concise (2-3 bullet points)
-6. Make it professional
+1. Return ONLY the enhanced description, no introductory text
+2. Use action verbs to highlight contributions
+3. Emphasize skills developed
+4. Use the bullet point character '•' for all bullet points
+5. Quantify achievements only if the input contains specific metrics
+6. Keep it concise (2-3 bullet points)
+7. Make it professional
+8. DO NOT ADD any text like "Here is the improved version" or "Enhanced description:"
  
 Return only the enhanced description.""",
  
- "default": f"""Improve this text for a professional resume:
+        "default": f"""Improve this text for a professional resume:
  
 {text}
  
 Please:
-1. Make it more concise, professional, and impactful
-2. Use the bullet point character '•' if using bullet points
-3. Quantify achievements only if the input contains specific metrics
-4. Preserve the original meaning
+1. Return ONLY the enhanced description, no introductory text
+2. Make it more concise, professional, and impactful
+3. Use the bullet point character '•' if using bullet points
+4. Quantify achievements only if the input contains specific metrics
+5. Preserve the original meaning
+6 .DO NOT ADD any text like "Here is the improved version" or "Enhanced description:"
  
 Return only the enhanced text.""",
-        
-        "default": f"""Improve this text for a professional resume:
-        
-{text}
-        
-Please make it more concise, professional and impactful while preserving the original meaning."""
     }
 
-    # Select the appropriate prompt
     prompt = prompts.get(field_type, prompts["default"])
 
     try:
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.7,
-            max_tokens=500
-        )
+        # Use your exact format for Ollama API call
+        payload = {
+            "model_name": "mistral:7b-instruct",
+            "prompt": prompt,
+            "actual_data": text,
+            "temperature": 0.7,
+            "top_p": 0.9,
+            "max_tokens": 500,
+            "top_k": 40,
+            "repeat_penalty": 1.1,
+            "num_ctx": 2048,
+            "num_thread": 4,
+            "stop": ["\n\n", "Human:"],
+            "conversation_history": []
+        }
         
-        enhanced_text = response.choices[0].message.content.strip()
+        print(f"[DEBUG] Sending payload to Ollama: {json.dumps(payload, indent=2)}")
         
-         # Post-process to replace common bullet characters with '•'
+        response = requests.post(OLLAMA_BASE_URL, json=payload)
+        
+        print(f"[DEBUG] Ollama response status: {response.status_code}")
+        print(f"[DEBUG] Ollama response text: {response.text}")
+
+        if response.status_code != 200:
+            return jsonify({"error": f"Ollama API error: {response.text}"}), 500
+        
+        result = response.json()
+        print(f"[DEBUG] Ollama JSON response: {json.dumps(result, indent=2)}")
+        
+        # Try different response field names
+        enhanced_text = result.get('response', '') or result.get('text', '') or result.get('output', '') or result.get('content', '')
+        enhanced_text = enhanced_text.strip()
+
+        print(f"[DEBUG] Extracted enhanced text: '{enhanced_text}'")
+
+        # Post-process to replace common bullet characters with '•'
         enhanced_text = enhanced_text.replace('- ', '• ').replace('* ', '• ')
         return jsonify({"enhancedText": enhanced_text})
         
     except Exception as e:
+        print(f"[ERROR] Exception occurred: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
 
-# def detect_domain(domain_text):
-#     domain_text = domain_text.lower()
-#     for domain_key, keywords in DOMAIN_KEYWORDS.items():
-#         if any(keyword in domain_text for keyword in keywords):
-#             print("✅ Detected domain:", domain_key)
-#             return domain_key
-#     print("⚠️ Defaulted to software")
-#     return "software"
+
 @resume_bp.route('/generate-objective', methods=['POST'])
 def generate_objective():
     data = request.json
@@ -338,31 +346,61 @@ def generate_objective():
 
     # Construct prompt
     context = "\n".join(f"- {part}" for part in context_parts) if context_parts else "No specific background provided"
-    prompt = f"""
-    Generate a professional 3-4 line career objective based on:
-    {context}
+    
+    # Create the system prompt and actual data
+    system_prompt = """You are a professional resume writer. Generate a professional 3-4 line career objective.
 
-    Guidelines:
-    1. Focus on career goals and relevant skills
-    2. Use third-person perspective (avoid "I" or "my")
-    3. Keep it concise (40-60 words)
-    4. Sound professional but not generic
-    """
+Guidelines:
+1. Return ONLY the career objective text, no introductory text
+2. Focus on career goals and relevant skills
+3. Use third-person perspective (avoid "I" or "my")
+4. Keep it concise (40-60 words)
+5. Sound professional but not generic
+6. DO NOT ADD any text like "Here is", "Let me know", or explanatory phrases
+7. DO NOT include quotation marks around the objective"""
+
+    actual_data = f"Generate a career objective based on:\n{context}"
 
     try:
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "You are a professional resume writer."},
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0.3,
-            max_tokens=150
-        )
-        generated_text = response.choices[0].message.content.strip()
-        return jsonify({"objective": generated_text})
+        # Use your custom format for Ollama API call
+        payload = {
+            "model_name": "mistral:7b-instruct",
+            "prompt": system_prompt,
+            "actual_data": actual_data,
+            "temperature": 0.3,
+            "top_p": 0.9,
+            "max_tokens": 3000,
+            "top_k": 40,
+            "repeat_penalty": 1.1,
+            "num_ctx": 2048,
+            "num_thread": 4,
+            "stop": ["\n\n", "Human:", "Here is", "Let me"],
+            "conversation_history": []
+        }
+        
+        print(f"[DEBUG] Sending objective payload to Ollama: {json.dumps(payload, indent=2)}")
+        
+        response = requests.post(OLLAMA_BASE_URL, json=payload)
+
+        if response.status_code != 200:
+            return jsonify({"error": f"Ollama API error: {response.text}"}), 500
+        
+        result = response.json()
+        print(f"[DEBUG] Ollama objective response: {json.dumps(result, indent=2)}")
+        
+        # Extract the generated objective
+        generated_text = result.get('response', '').strip()
+        
+        # Clean up any unwanted prefixes
+        clean_text = generated_text
+        for prefix in ["Here is", "Let me", "Objective:", "Career Objective:"]:
+            if clean_text.startswith(prefix):
+                clean_text = clean_text[len(prefix):].strip()
+        
+        return jsonify({"objective": clean_text})
 
     except Exception as e:
+        print(f"[ERROR] Exception in generate-objective: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
 @resume_bp.route("/suggest-skills", methods=["POST"])
@@ -421,23 +459,24 @@ def extract_resume():
     
     try:
         raw_text = extract_text_builder(file, file.filename)
-        truncated_text = raw_text[:1000000]
+        # Truncate to avoid overwhelming the context window
+        max_input_chars = 12000  # Further reduced for safety
+        truncated_text = raw_text[:max_input_chars]
+        print(f"[DEBUG] Input text length: {len(truncated_text)} characters")
 
-        prompt = f"""Extract all resume information and return it as JSON in the *exact structure* below.
+        prompt = f"""You are a precise JSON generator. Extract all resume information and return it as a JSON object in the *exact structure* below. Return ONLY the JSON object, with no additional text, explanations, or introductory phrases like "Here is". Do NOT include ```json markers unless specified. Ensure the output is valid JSON.
 
-        👉 IMPORTANT:
-        - If the resume belongs to a **fresher** (i.e. no work experience section), then place the summary text inside the **"objective"** field and  **"summary"** .
-        - If the resume belongs to an **experienced candidate** (i.e. work experience section is present), then place the summary text inside the **"summary"** field and  **"objective"** .
-        
-        Map section headings even if synonyms are used. For example:
-        - "Professional Summary", "About Me", or "Objective" → summary/objective as per above condition
-        - "Education", "Academic Background", or "Qualifications" → education
-        - "Projects", "Project Experience", "Work Samples", or "Portfolio" → projects
-        - "Awards", "Honors", "Achievements", or "Recognition" → achievements
-        - "Experience", "Professional Experience", "Professsional background", "occupation History", "Career Experience," or "Work experience"
+        IMPORTANT:
+        - If the resume belongs to a **fresher** (i.e., no work experience section), place the summary text in both the **"objective"** and **"summary"** fields.
+        - If the resume belongs to an **experienced candidate** (i.e., work experience section is present), place the summary text in both the **"summary"** and **"objective"** fields.
+        - Map section headings even if synonyms are used. For example:
+          - "Professional Summary", "About Me", or "Objective" → summary/objective
+          - "Education", "Academic Background", or "Qualifications" → education
+          - "Projects", "Project Experience", "Work Samples", or "Portfolio" → projects
+          - "Awards", "Honors", "Achievements", or "Recognition" → achievements
+          - "Experience", "Professional Experience", "Professional background", "Occupation History", "Career Experience", or "Work experience" → experience
 
-        Format your output like this:
-
+        Output structure:
         {{
             "Name": "Full Name",
             "jobTitle": "Job Title",
@@ -446,8 +485,8 @@ def extract_resume():
             "location": "City, Country",
             "linkedin": "https://linkedin.com/...",
             "github": "https://github.com/...",
-            "summary": "Professional summary...",     <--if you extract summary from resume put it here
-            "objective": "Carrer Objectives",         if you extract summary from resume put it here also 
+            "summary": "Professional summary...",
+            "objective": "Career Objectives",
             "experience": [
                 {{
                     "jobTitle": "Job Title",
@@ -473,10 +512,10 @@ def extract_resume():
                     "degree": "Degree Name",
                     "school": "School Name",
                     "level": "type of education level",
-                    "startDate": "Year",
-                    "endDate": "Year",
+                    "startDate": "Month Year",
+                    "endDate": "Month Year",
                     "location": "working location",
-                    "cgpa": "X.XX/10"  
+                    "cgpa": "X.XX/10"
                 }}
             ],
             "skills": ["Skill1", "Skill2"],
@@ -485,7 +524,7 @@ def extract_resume():
             "achievements": [
                 {{
                     "title": "Achievement Title",
-                    "description":"some description about the achievement"
+                    "description": "some description about the achievement"
                 }}
             ],
             "projects": [
@@ -497,82 +536,110 @@ def extract_resume():
                     "description": ["Point 1", "Point 2"]
                 }}
             ],
-            
-             "certifications": [
+            "certifications": [
                 {{
                     "name": "Certification name",
                     "issuer": "name of the issuer",
-                    "date": "Month Year",
+                    "date": "Month Year"
                 }}
             ]
-    }}"""  # Your existing prompt
+        }}
+        """
         
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": f"{prompt}\n\nResume Text:\n{truncated_text}"}],
-            temperature=0.1,
-            max_tokens=2000
-        )
+        # Use Ollama's STANDARD format (custom format doesn't work)
+        payload = {
+            "model_name": "mistral:7b-instruct",
+            "prompt": prompt,
+            "actual_data": truncated_text,
+            "temperature": 0.2,  # Slightly increased for flexibility
+            "top_p": 0.9,
+            "max_tokens": 4000,  # Increased to handle larger JSON output
+            "top_k": 40,
+            "repeat_penalty": 1.1,
+            "num_ctx": 8192,  # Increased context window
+            "stop": ["\n\n", "Human:", "Here is"],
+            "conversation_history": []
+        }
         
-        result = response.choices[0].message.content
+        print(f"[DEBUG] Sending extract payload to Ollama: {json.dumps(payload, indent=2)}")
         
+        response = requests.post(OLLAMA_BASE_URL, json=payload)
+
+        print(f"[DEBUG] Ollama response status: {response.status_code}")
+        print(f"[DEBUG] Ollama response text: {response.text}")
+
+        if response.status_code != 200:
+            return jsonify({
+                "error": f"Ollama API error: {response.text}",
+                "status_code": response.status_code
+            }), 500
+        
+        result = response.json()
+        print(f"[DEBUG] Ollama JSON response: {json.dumps(result, indent=2)}")
+        
+        # Extract the response - Ollama uses 'response' field
+        ai_response = result.get('response', '')
+        print(f"[DEBUG] Raw AI response: {ai_response}")
+        
+        if not ai_response:
+            return jsonify({
+                "error": "AI returned empty response",
+                "ai_response": ai_response
+            }), 500
+
         try:
-            parsed = json.loads(result)
-        except json.JSONDecodeError:
+            # Look for JSON object in the response
+            json_start = ai_response.find('{')
+            json_end = ai_response.rfind('}') + 1
+            
+            if json_start != -1 and json_end != -1:
+                json_str = ai_response[json_start:json_end]
+                # Clean the JSON string
+                json_str = json_str.strip()
+                json_str = json_str.replace('```json', '').replace('```', '').strip()
+                
+                parsed = json.loads(json_str)
+            else:
+                # Fallback: Check for JSON after common prefixes
+                for prefix in ["Here is the resume information in the requested JSON format:", "Here is the JSON:", "```json"]:
+                    if ai_response.startswith(prefix):
+                        json_str = ai_response[len(prefix):].strip()
+                        json_start = json_str.find('{')
+                        json_end = json_str.rfind('}') + 1
+                        if json_start != -1 and json_end != -1:
+                            json_str = json_str[json_start:json_end].strip()
+                            json_str = json_str.replace('```json', '').replace('```', '').strip()
+                            parsed = json.loads(json_str)
+                            break
+                else:
+                    return jsonify({
+                        "error": "AI returned invalid JSON - no JSON object found",
+                        "ai_response": ai_response
+                    }), 500
+                
+            return jsonify(parsed)
+
+        except json.JSONDecodeError as e:
+            print(f"[ERROR] JSON decode error: {e}")
+            print(f"[ERROR] JSON string that failed: {json_str}")
             return jsonify({
                 "error": "AI returned invalid JSON",
-                "ai_response": result
+                "ai_response": ai_response,
+                "json_error": str(e)
             }), 500
-            
-        return jsonify(parsed)
 
+    except requests.RequestException as e:
+        print(f"[ERROR] Network error in extract: {str(e)}")
+        return jsonify({
+            "error": f"Network error: {str(e)}",
+            "type": "network_error"
+        }), 500
     except Exception as e:
+        print(f"[ERROR] Exception in extract: {str(e)}")
         return jsonify({
             "error": str(e),
             "type": "server_error"
         }), 500
-
-
-
-
-
-@resume_bp.route("/enhance-summary", methods=["POST"])
-def enhance_summary():
-    data = request.json
-    text = data.get('text', '')
-    job_title = data.get('jobTitle', '')
-    skills = data.get('skills', [])
-
-    prompt = f"""Enhance this professional summary according to industry standards:
-    
-    Current summary: {text}
-    
-    Job Title: {job_title}
-    Key Skills: {', '.join(skills)}
-    
-    Please:
-    1. Keep it concise (3-4 sentences max)
-    2. Include relevant keywords naturally
-    3. Use professional language
-    4. Highlight achievements if mentioned
-    5. Maintain third-person perspective
-    
-    Return only the enhanced summary without additional commentary."""  # Your existing prompt
-
-    try:
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.7,
-            max_tokens=200
-        )
-        
-        enhanced_text = response.choices[0].message.content.strip()
-        return jsonify({"enhancedText": enhanced_text})
-        
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
 
 @resume_bp.route('/download_pdf', methods=['POST'])
 def download_pdf():
@@ -1015,7 +1082,62 @@ body {
   text-align: right;
 }
 
+/* Work Experience Section */
+                                   
+.work-item {
+  margin-bottom: 1rem;
+  page-break-inside: avoid;
+}
 
+.work-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 0.25rem;
+}
+
+.work-info {
+  flex: 1;
+  min-width: 0; /* Prevents text overflow */
+}
+
+.work-info h3 {
+  font-size: 0.8rem;
+  font-weight: bold;
+  margin: 0 0 0.1rem 0;
+  line-height: 1.3;
+}
+
+.work-info p {
+  font-size: 0.75rem;
+  color: #4a5568;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.date-right {
+  font-size: 0.75rem;
+  color: #718096;
+  white-space: nowrap;
+  flex-shrink: 0;
+  text-align: right;
+  padding-top: 0.1rem; /* Minor alignment adjustment */
+}
+
+.work-list {
+  font-size: 0.75rem;
+  color: #4a5568;
+  list-style: disc;
+  padding-left: 1.25rem;
+  margin-top: 0.25rem;
+  margin-bottom: 0;
+}
+
+.work-list li {
+  margin-bottom: 0.1rem;
+  line-height: 1.3;
+}
 
 .skills-grid {
   display: flex; /* Use flex instead of grid for better PDF support */
@@ -1699,7 +1821,7 @@ width: 170mm;
   display: flex;
   align-items: flex-start;
   padding: 0 8px;
-  color: #007bff;
+  color: #1f2937;
   font-size: 13px;
   line-height: 1;
 }
@@ -1772,7 +1894,6 @@ width: 170mm;
   color: white;
   padding: 20px;
   text-align: center;
-    border: 2px solid black;
 }
 
 .template6-header h1 {

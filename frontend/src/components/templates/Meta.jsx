@@ -2,12 +2,26 @@ import React, { useRef, forwardRef } from "react";
 import useResumeStore from "../../store/useResumeStore";
 import "./Meta.css";
 
-// const formatDate = (dateStr) => {
-//   if (!dateStr) return "";
-//   const options = { year: "numeric", month: "short" }; // e.g., Jan 2023
-//   const date = new Date(dateStr);
-//   return isNaN(date) ? dateStr : date.toLocaleDateString("en-US", options);
-// };
+const formatDate = (dateStr) => {
+  if (!dateStr) return "";
+  
+  // Handle formats like "8/2016" or "08/2016"
+  if (dateStr.includes("/") && dateStr.split("/").length === 2) {
+    const [month, year] = dateStr.split("/");
+    const date = new Date(parseInt(year), parseInt(month) - 1, 1); // Month is 0-indexed
+    return isNaN(date) ? dateStr : date.toLocaleDateString("en-US", { 
+      year: "numeric", 
+      month: "short" 
+    });
+  }
+  
+  // Handle other date formats
+  const date = new Date(dateStr);
+  return isNaN(date) ? dateStr : date.toLocaleDateString("en-US", { 
+    year: "numeric", 
+    month: "short" 
+  });
+};
 
 const Meta = forwardRef(({ data = {} }, ref) => {
   const { toggle } = useResumeStore();
@@ -93,7 +107,7 @@ const Meta = forwardRef(({ data = {} }, ref) => {
             <i>{item.jobTitle || item.role}</i> - {item.company} , {item.location}
           </strong>
           <strong className="meta-dates">
-            {item.startDate} - {item.endDate}
+            {formatDate(item.startDate)} - {formatDate(item.endDate)}
           </strong>
         </div>
         <ul className="meta-bullets">
@@ -125,7 +139,7 @@ const Meta = forwardRef(({ data = {} }, ref) => {
                   {edu.degree} - {edu.school} , {edu.location}
                 </strong>
                 <strong className="meta-dates">
-                  {edu.startDate} - {edu.endDate}
+                  {formatDate(edu.startDate)} - {formatDate(edu.endDate)}
                 </strong>
               </div>
               {edu.cgpa && <div className="meta-cgpa">CGPA: {edu.cgpa}</div>}
@@ -146,7 +160,7 @@ const Meta = forwardRef(({ data = {} }, ref) => {
                   <i>{item.jobTitle || item.role}</i> - {item.company} , {item.location}
                 </strong>
                 <strong className="meta-dates">
-                  {item.startDate} - {item.endDate}
+                  {formatDate(item.startDate)} - {formatDate(item.endDate)}
                 </strong>
               </div>
               <ul className="meta-bullets">
@@ -175,7 +189,7 @@ const Meta = forwardRef(({ data = {} }, ref) => {
               <div className="meta-flex">
                 <strong className="info-project">{proj.title}</strong>
                 <strong className="meta-dates">
-                  {proj.startDate} - {proj.endDate}
+                  {formatDate(proj.startDate)} - {formatDate(proj.endDate)}
                 </strong>
               </div>
               <ul className="meta-bullets">
@@ -224,7 +238,7 @@ const Meta = forwardRef(({ data = {} }, ref) => {
           <ul className="meta-bullets">
             {certifications.map((cert, i) => (
               <li key={i}>
-                {cert.name} — {cert.issuer} ({cert.Date})
+                {cert.name} — {cert.issuer} ({formatDate(cert.Date)})
               </li>
             ))}
           </ul>

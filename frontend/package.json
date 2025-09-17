@@ -30,6 +30,7 @@
     "react-router-dom": "^7.6.2",
     "react-to-pdf": "^2.0.1",
     "recharts": "^3.0.0",
+    "styled-components": "^6.1.19",
     "tailwindcss": "^4.1.8",
     "zustand": "^5.0.5"
   },

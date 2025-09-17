@@ -1,5 +1,3 @@
-
-
 from flask import Blueprint, request, jsonify
 from werkzeug.utils import secure_filename
 from flask import current_app
@@ -10,10 +8,13 @@ import ast
 import hashlib
 import os
 import uuid
+import requests
 
 from app.utils.file_utils import extract_text, extract_json_from_response
-# --- KEY CHANGE: We ONLY import calculate_overall_score. The problematic normalize_scores is gone. ---
 from app.utils.scoring import calculate_overall_score
+
+
+OLLAMA_BASE_URL= os.getenv("OLLAMA_BASE_URL")
 
 analysis_bp = Blueprint('analysis', __name__)
 
@@ -21,8 +22,38 @@ analysis_bp = Blueprint('analysis', __name__)
 def normalize_text(text):
     if not text:
         return ""
-    # Lowercase, remove leading/trailing whitespace, and collapse multiple spaces/newlines
-    return ' '.join(text.lower().strip().split())
+    # Improved normalization for better keyword matching
+    text = text.lower().strip()
+    # Remove extra whitespace and normalize punctuation
+    text = re.sub(r'[^\w\s+#.-]', ' ', text)
+    text = ' '.join(text.split())
+    return text
+
+def extract_keywords_from_text(text):
+    """Extract meaningful keywords from text for better matching"""
+    if not text:
+        return set()
+    
+    # Normalize text
+    normalized = normalize_text(text)
+    
+    # Split into words and phrases
+    words = normalized.split()
+    keywords = set()
+    
+    # Add individual words (filter out common words)
+    common_words = {'and', 'or', 'the', 'a', 'an', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by'}
+    for word in words:
+        if len(word) > 2 and word not in common_words:
+            keywords.add(word)
+    
+    # Add bigrams for compound skills
+    for i in range(len(words) - 1):
+        if words[i] not in common_words and words[i+1] not in common_words:
+            bigram = f"{words[i]} {words[i+1]}"
+            keywords.add(bigram)
+    
+    return keywords
 
 # A helper function to hash file content
 def hash_file(file_storage):
@@ -74,50 +105,79 @@ def analyze_resume_route():
         {"criterion": "Concise Bullet Points", "passed": <boolean>, "comment": "<string>"}] }, "content": { "score": <number>, "feedback": "<string>", "details": [{"criterion": "ATS Parse Rate", "passed": <boolean>, "comment": "<string>"}, {"criterion": "Quantified Impact", "passed": <boolean>, "comment": "<string>"}, {"criterion": "Language Repetition", "passed": <boolean>, "comment": "<string>"}, {"criterion": "Spelling & Grammar", "passed": <boolean>, "comment": "<string>"}] }, "sections": { "score": <number>, "feedback": "<string>",
           "details": [{"criterion": "Contact Information", "passed": <boolean>, "comment": "<string>"}, {"criterion": "Essential Sections", "passed": <boolean>, "comment": "<string>"}, {"criterion": "Personality Statement", "passed": <boolean>, "comment": "<string>"}, {"criterion": "EXPERIENCE", "passed": <boolean>, "comment": "<string>"}] }, "style": { "score": <number>, "feedback": "<string>", "details": [{"criterion": "Design Consistency", "passed": <boolean>, "comment": "<string>"}, {"criterion": "Professional Email", "passed": <boolean>, "comment": "<string>"}, 
           {"criterion": "Active Voice", "passed": <boolean>, "comment": "<string>"}, {"criterion": "Avoids Buzzwords & Clichés", "passed": <boolean>, "comment": "<string>"}] }}}"""
+        
         resume_text = extract_text(resume_file)
         
-        # --- KEY CHANGE: This is the new, universal prompt that works for any job. ---
+        # Improved prompt with better JSON formatting instructions
         base_prompt = f"""
-You are a highly discerning, universal AI Resume Grader. Your analysis is divided into two distinct parts. You must be OBJECTIVE and CRITICAL.
+IMPORTANT: You MUST return ONLY valid JSON in the exact format specified below. Do NOT include any additional text, explanations, or analysis outside of the JSON structure.
 
---- PART 1: JD-DEPENDENT ANALYSIS (Strict comparison of Resume vs. JD) ---
-Your scores for 'tailoring' and 'content' MUST be based entirely on the alignment with the Job Description.
+You are an expert ATS (Applicant Tracking System) Resume Analyzer. You must provide ACCURATE, CONSISTENT analysis that matches exactly with the content you analyze.
 
-1.  **Tailoring (Weight: 35%):** This is the most critical score.
-    -   **Step 1: Create a Checklist.** First, analyze the Job Description ONLY. Identify the most important requirements. These are usually 'Hard Skills' (e.g., specific software, programming languages, certifications) and 'Key Qualifications' (e.g., '5+ years of experience', 'Master's Degree').
-    -   **Step 2: Grade Against the Checklist.** Now, scan the resume and determine what percentage of YOUR checklist items are met.
-    -   **Step 3: Score CRITICALLY.** The score MUST reflect this percentage. If a resume is missing most of the critical Hard Skills you identified, the score MUST be very low (e.g., under 30). Do not give high scores for poor matches. The feedback MUST explicitly list the top 3-5 missing critical requirements from your checklist.
+CRITICAL REQUIREMENTS:
+1. Your scores MUST directly reflect the actual content analysis
+2. Your feedback MUST be consistent with the scores you assign
+3. Be precise in keyword and skill matching
+4. Analyze the complete resume content, not just sections
+5. You MUST return ONLY valid JSON, no additional text before or after
 
-2.  **Content (Weight: 20%):**
-    -   Evaluate the resume's substance in the context of the JD. Does the resume provide EVIDENCE for its claims that is relevant to the role? (e.g., for a sales role, revenue numbers; for a technical role, project metrics).
-    -   Score HIGH (80-100) for specific, relevant evidence. Score LOW (30-60) for vague responsibilities.
+ANALYSIS FRAMEWORK:
 
---- PART 2: JD-INDEPENDENT ANALYSIS (General Resume Quality) ---
-For these categories, IGNORE the Job Description. Evaluate the resume against universal best practices.
+**PART 1: JD-DEPENDENT ANALYSIS (Primary Focus)**
 
-3.  **Format (Weight: 15%):** Score high (90+) for clean, single-column, ATS-friendly layouts. Penalize for multiple columns, tables, or graphics.
+1. **Tailoring Score (35% weight)** - MOST CRITICAL:
+   - Extract ALL key requirements from JD: hard skills, software, certifications, experience level, qualifications
+   - Count how many of these requirements are ACTUALLY present in the resume
+   - Calculate percentage match: (Requirements met / Total requirements) × 100
+   - Score Guidelines:
+     * 90-100: 90%+ requirements met with strong evidence
+     * 70-89: 70-89% requirements met with good evidence  
+     * 50-69: 50-69% requirements met with basic evidence
+     * 30-49: 30-49% requirements met with weak evidence
+     * 0-29: <30% requirements met
+   - List SPECIFIC missing requirements in feedback
 
-4.  **Sections (Weight: 15%):** Does the resume have all standard professional sections (Contact, Summary, Experience, Skills, Education)? Deduct points for missing core sections.
+2. **Content Score (20% weight)**:
+   - Evaluate if resume content provides RELEVANT evidence for JD requirements
+   - Check for quantified achievements related to the role
+   - Score based on relevance and depth of experience shown
 
-5.  **Style (Weight: 15%):** Is the language professional, free of errors, and in an active voice? Deduct points for each significant error.
+**PART 2: UNIVERSAL RESUME QUALITY (Secondary Focus)**
 
---- TASK ---
-Apply these principles to generate a detailed and HONEST analysis in the following JSON format. The scores must be a direct reflection of your critical evaluation.
+3. **Format Score (15% weight)**:
+   - ATS compatibility: single column, standard fonts, clear sections
+   - Professional layout without graphics/tables that break ATS parsing
 
-JSON Structure:
+4. **Sections Score (15% weight)**:
+   - Must have: Contact info, Professional summary/objective, Work experience, Skills, Education
+   - Bonus: Relevant certifications, projects, achievements
+
+5. **Style Score (15% weight)**:
+   - Professional language, active voice, no grammatical errors
+   - Consistent formatting and appropriate length
+
+SCORING ACCURACY RULES:
+- Each score MUST reflect actual analysis findings
+- Feedback MUST explain why each score was assigned
+- Be honest about gaps - don't inflate scores
+- Ensure overall score calculation matches category scores
+
+Return analysis in this exact JSON format and NOTHING ELSE:
 {json_structure}
 
 Job Description:
 {jd_text}
 
-Resume Text:
+Resume Content:
 {resume_text[:15000]}
+
+IMPORTANT: Analyze the COMPLETE resume content. Your analysis and scores must be factually accurate and consistent.
 """
 
         if old_score_from_form is not None:
             prompt = f"""
-This is a RE-EVALUATION. The user has updated their resume from a previous score of {old_score_from_form}/100.
-Apply the universal principles below with a focus on how the new changes improve the scores, especially in the 'Tailoring' and 'Content' categories.
+This is a RE-EVALUATION. Previous score was {old_score_from_form}/100.
+Focus on improvements made, especially in tailoring and content alignment.
 
 {base_prompt}
 """
@@ -127,11 +187,86 @@ Apply the universal principles below with a focus on how the new changes improve
             return jsonify({"error": "Job description is required for analysis"}), 400
         
         try:
-            response = client.chat.completions.create(model="gpt-3.5-turbo", messages=[{"role": "user", "content": prompt}], temperature=0.1)
-            result_dict = extract_json_from_response(response.choices[0].message.content)
+            payload = {
+                "model_name": "mistral:7b-instruct",
+                "prompt": prompt,
+                "actual_data": resume_text[:15000],
+                "temperature": 0.1,
+                "top_p": 0.9,
+                "max_tokens": 5000,
+                "top_k": 40,
+                "repeat_penalty": 1.1,
+                "num_ctx": 5000,
+                "stop": ["\n\n", "Human:", "```", "Here is", "Analysis:"],
+                "conversation_history": []
+            }
+            
+            response = requests.post(
+                OLLAMA_BASE_URL, 
+                json=payload
+            )
 
-            # --- KEY CHANGE: The faulty `normalize_scores` call is REMOVED. ---
-            # We now trust the AI's category scores and calculate the overall score from them.
+            if response.status_code != 200:
+                current_app.logger.error(f"Ollama API error: {response.status_code} - {response.text}")
+                return jsonify({"error": f"Ollama API error: {response.text}"}), 500
+                
+            result = response.json()
+            
+            # Check if the response contains the expected structure
+            if not result.get("success", False):
+                return jsonify({"error": f"Ollama API returned unsuccessful response: {result.get('message', 'Unknown error')}"}), 500
+                
+            response_text = result.get("response", "")
+
+            # Enhanced JSON extraction with better error handling
+            current_app.logger.info(f"Raw AI response: {response_text[:500]}...")  # Log first 500 chars for debugging
+            
+            # Clean the response text
+            cleaned_text = response_text.strip()
+            
+            # Remove markdown code blocks if present
+            if cleaned_text.startswith('```json'):
+                cleaned_text = cleaned_text[7:]
+            if cleaned_text.startswith('```'):
+                cleaned_text = cleaned_text[3:]
+            if cleaned_text.endswith('```'):
+                cleaned_text = cleaned_text[:-3]
+            cleaned_text = cleaned_text.strip()
+            
+            # Try to parse the JSON
+            try:
+                result_dict = json.loads(cleaned_text)
+            except json.JSONDecodeError as e:
+                current_app.logger.error(f"JSON parsing failed. Cleaned response: {cleaned_text[:500]}")
+                current_app.logger.error(f"JSON decode error: {str(e)}")
+                
+                # Fallback: Try to find JSON object in the text
+                json_match = re.search(r'\{.*\}', cleaned_text, re.DOTALL)
+                if json_match:
+                    try:
+                        result_dict = json.loads(json_match.group())
+                        current_app.logger.info("Successfully extracted JSON using regex fallback")
+                    except json.JSONDecodeError:
+                        # If JSON parsing still fails, return a more helpful error
+                        return jsonify({
+                            "error": "AI returned invalid JSON format", 
+                            "raw_response_preview": cleaned_text[:200] + "...",
+                            "hint": "The AI might be analyzing the resume content instead of returning JSON. Check your prompt formatting."
+                        }), 500
+                else:
+                    # If no JSON found, the AI is probably returning resume analysis instead of JSON
+                    return jsonify({
+                        "error": "AI returned resume analysis instead of JSON format", 
+                        "raw_response_preview": cleaned_text[:200] + "...",
+                        "hint": "The prompt may need stronger instructions to return only JSON."
+                    }), 500
+
+            # Validate the structure
+            if not isinstance(result_dict, dict) or 'analysis_breakdown' not in result_dict:
+                current_app.logger.error(f"Invalid JSON structure: {result_dict}")
+                return jsonify({"error": "AI returned incomplete analysis structure"}), 500
+
+            # Calculate overall score from category scores with proper weighting
             result_dict['overall_score'] = calculate_overall_score(result_dict)
             new_score = result_dict['overall_score']
             
@@ -163,14 +298,20 @@ Apply the universal principles below with a focus on how the new changes improve
             result_dict['parsed_resume_text'] = resume_text
             result_dict['file_id'] = file_id 
             return jsonify(result_dict)
+            
+        except requests.exceptions.Timeout:
+            return jsonify({"error": "Ollama API request timed out"}), 500
+        except requests.exceptions.RequestException as e:
+            current_app.logger.error(f"Ollama API connection error: {str(e)}")
+            return jsonify({"error": f"Connection error: {str(e)}"}), 500
         except Exception as e:
-            current_app.logger.error(f"AI analysis failed: {str(e)}")
-            return jsonify({"error": f"AI analysis failed. Please check the logs."}), 500
+            current_app.logger.error(f"AI analysis failed: {str(e)}", exc_info=True)
+            return jsonify({"error": f"AI analysis failed: {str(e)}"}), 500
 
 
 @analysis_bp.route("/get_keyword_gaps", methods=["POST"])
 def get_keyword_gaps():
-    """Identify missing and matched keywords between resume and JD"""
+    """Identify missing and matched keywords between resume and JD with improved accuracy"""
     data = request.get_json()
     jd_text = data.get('jd_text')
     resume_text = data.get('resume_text')
@@ -178,56 +319,127 @@ def get_keyword_gaps():
     if not jd_text or not resume_text:
         return jsonify({"error": "JD and Resume text required."}), 400
 
+    # Pre-process texts for better matching
+    resume_keywords = extract_keywords_from_text(resume_text)
+    jd_keywords = extract_keywords_from_text(jd_text)
+
     prompt = f"""
-Analyze this resume against the Job Description with EXTREME precision and ATS relevance.
-    Identify the most critical missing and matched keywords and gaps that directly impact ATS scoring.
+You are an expert ATS keyword analyzer. Perform ACCURATE keyword matching between the resume and job description.
 
-    Keyword Selection Guidelines:
-    1. Prioritize hard skills over soft skills
-    2. Include specific technologies/tools
-    3. Clearly identify missing qualifications,skills,enxperience or requirements from the JD that does not present in resume.
-    4. Highlight present qualifications and keywords that perfectly align with the JD
+ANALYSIS RULES:
+1. Use EXACT matching - if a skill/keyword appears in both texts, it's MATCHED
+2. Consider variations (e.g., "JavaScript" and "JS", "Machine Learning" and "ML")
+3. Prioritize technical skills, tools, certifications, and specific qualifications
+4. Do NOT list a keyword as missing if it exists in the resume (even in different form)
 
-    Return a detailed JSON analysis with:
-    - missing_keywords: array of 5-10 critical missing terms
-    - present_keywords: array of 5-10 perfectly matched terms that common in both resume and JD
-    - missing_qualifications: array of missing requirements
-    - matched_qualifications: array of matched requirements that common in both resume and JD
+STEP-BY-STEP PROCESS:
+1. Extract all important keywords from JD
+2. Check each keyword against the resume content
+3. Classify as PRESENT (found in resume) or MISSING (not found in resume)
+4. Extract matching qualifications and missing requirements
 
-    Example Output:
-    {{
-      "missing_keywords": ["Python", "AWS", "Project Management", "leadership", "Time management"],
-      "present_keywords": ["Java", "SQL", "Team Leadership"],
-      "missing_qualifications": ["1+ to 5+ years experience", "Cloud certification", "Business analytics"],
-      "matched_qualifications": ["Bachelor's Degree", "Agile experience"]
-    }}
+Be extremely accurate - your analysis directly impacts ATS scoring.
 
-    Job Description:
-    {jd_text}
-    
-    Resume Text:
-    {resume_text}
-    """
+Return ONLY valid JSON in this format:
+{{
+  "missing_keywords": ["keyword1", "keyword2", ...],
+  "present_keywords": ["keyword1", "keyword2", ...],
+  "missing_qualifications": ["qualification1", "qualification2", ...],
+  "matched_qualifications": ["qualification1", "qualification2", ...]
+}}
+
+Job Description:
+{jd_text}
+
+Resume Text:
+{resume_text}
+
+CRITICAL: Double-check your matching. If a skill appears in both texts, it MUST be in present_keywords, NOT missing_keywords.
+"""
     
     try:
-        response = client.chat.completions.create(
-            # model="gpt-4",
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.3
+  # Prepare payload with your specified parameters
+        payload = {
+            "model_name": "mistral:7b-instruct",
+            "prompt": prompt,
+            "actual_data": f"Job Description:\n{jd_text}\n\nResume Text:\n{resume_text}",
+            "temperature": 0.1,
+            "top_p": 0.9,
+            "max_tokens": 4000,
+            "top_k": 40,
+            "repeat_penalty": 1.1,
+            "num_ctx": 4000,
+            "num_thread": 4,
+            "stop": ["\n\n", "Human:"],
+            "conversation_history": []
+        }
+
+        response = requests.post(
+            OLLAMA_BASE_URL, 
+            json=payload
         )
-        response_text = response.choices[0].message.content
-        result_dict = extract_json_from_response(response_text)
+
+        if response.status_code != 200:
+            current_app.logger.error(f"Ollama API error: {response.status_code} - {response.text}")
+            return jsonify({"error": f"Ollama API error: {response.text}"}), 500
+            
+        result = response.json()
+        
+        # Check if the response contains the expected structure
+        if not result.get("success", False):
+            return jsonify({"error": f"Ollama API returned unsuccessful response: {result.get('message', 'Unknown error')}"}), 500
+            
+        response_text = result.get("response", "")
+
+        # Extract JSON from response
+        try:
+            json_start = response_text.find('{')
+            json_end = response_text.rfind('}') + 1
+            if json_start != -1 and json_end != -1:
+                json_str = response_text[json_start:json_end]
+                result_dict = json.loads(json_str)
+            else:
+                result_dict = json.loads(response_text)
+        except json.JSONDecodeError as e:
+            return jsonify({"error": f"AI returned invalid JSON: {str(e)}"}), 500
+
+        
+        # Post-process to ensure accuracy - cross-check with our keyword extraction
+        if 'missing_keywords' in result_dict and 'present_keywords' in result_dict:
+            # Verify matching using our pre-processed keywords
+            verified_missing = []
+            verified_present = []
+            
+            for keyword in result_dict.get('missing_keywords', []):
+                keyword_lower = normalize_text(keyword)
+                # Check if keyword actually exists in resume
+                found_in_resume = any(keyword_lower in resume_kw for resume_kw in resume_keywords)
+                if not found_in_resume:
+                    verified_missing.append(keyword)
+                else:
+                    verified_present.append(keyword)
+            
+            for keyword in result_dict.get('present_keywords', []):
+                keyword_lower = normalize_text(keyword)
+                found_in_resume = any(keyword_lower in resume_kw for resume_kw in resume_keywords)
+                if found_in_resume and keyword not in verified_present:
+                    verified_present.append(keyword)
+            
+            result_dict['missing_keywords'] = verified_missing
+            result_dict['present_keywords'] = verified_present
+        
         return jsonify(result_dict)
+    except requests.exceptions.Timeout:
+        return jsonify({"error": "Ollama API request timed out"}), 500
+    except requests.exceptions.RequestException as e:
+        current_app.logger.error(f"Ollama API connection error: {str(e)}")
+        return jsonify({"error": f"Connection error: {str(e)}"}), 500
     except Exception as e:
         return jsonify({"error": f"Keyword analysis failed: {str(e)}"}), 500
-    
-    
-    
 
 @analysis_bp.route("/generate_questions", methods=["POST"])
 def generate_questions_route():
-    """Generate questions to fill resume gaps"""
+    """Generate targeted questions to fill resume gaps"""
     data = request.get_json()
     jd_text = data.get('jd_text')
     resume_text = data.get('resume_text')
@@ -236,125 +448,92 @@ def generate_questions_route():
         return jsonify({"error": "JD and Resume text required."}), 400
         
     prompt = f"""
-Based on the resume and JD, find the most critical gaps. Generate 5-10 direct questions to fix them.
-    Each question should be specific and designed to extract information that would help improve the resume.
-    
-    Return your response in JSON format with a single "questions" key containing an array of questions.
-    
-    Important Guidelines:
-    1. Only return valid JSON
-    2. Questions should be actionable and specific that helps to improve resume score
-    3. Focus on extracting quantifiable achievements and missing important skills and experience 
-    4. Prioritize questions that will high impact on  ATS scoring 
-    5. After optimization guarantee optimized score should be greater then 10% from old score
-    
-    Example Output:
-    {{
-      "questions": [
-        "What specific metrics can you provide for your achievements in your last role?",
-        "Can you describe any experience with Pytho or ['technology name'] that wasn't mentioned in the resume?",
-        "What project management methodologies are you familiar with?",
-        "What certifications do you have that weren't listed?",
-        "Can you quantify your impact in your previous roles with specific numbers?"
-      ]
-    }}
-    
-    Job Description:
-    {jd_text}
-    
-    Resume Text:
-    {resume_text}
-    """
-    
-    try:
-        response = client.chat.completions.create(
-            # model="gpt-4",
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.2
-        )
-        response_text = response.choices[0].message.content
-        result_dict = extract_json_from_response(response_text)
-        return jsonify(result_dict)
-    except Exception as e:
-        return jsonify({"error": f"Failed to generate questions: {str(e)}"}), 500
+Analyze the gaps between this resume and job description. Generate 5-8 strategic questions that will help extract information to significantly improve the ATS score.
 
+QUESTION CRITERIA:
+1. Target the BIGGEST gaps first (missing skills, experience, qualifications)
+2. Focus on quantifiable achievements and metrics
+3. Address missing technical skills or certifications
+4. Help uncover relevant experience that may not be clearly stated
+5. Questions should lead to score improvement of 10+ points
 
-@analysis_bp.route('/generate_feedback_from_jd', methods=['POST'])
-def generate_feedback_from_jd():
-    try:
-        data = request.get_json()
-        jd = data.get('jd')
-        resume_text = data.get('resume_text')
+QUESTION TYPES TO INCLUDE:
+- Quantification questions (metrics, numbers, results)
+- Missing skill verification questions
+- Experience depth questions
+- Certification/qualification questions
+- Achievement highlighting questions
 
-        if not jd or not resume_text:
-            return jsonify({"error": "JD or resume text missing"}), 400
-
-        prompt = f"""You are an expert Career Coach and ATS (Applicant Tracking System) evaluator.
-
-Your task is to compare a Job Description (JD) and a Resume. Based on this comparison, analyze and return insights that help the candidate improve alignment for better hiring outcomes. 
-
-Generate and return your response strictly in the following JSON format:
-
+Return ONLY valid JSON:
 {{
-  "ats_score": number (0-100),
-  "feedback": "string",
-  "strengths": ["string", "string", ...],
-  "weaknesses": ["string", "string", ...],
-  "matching_skills": ["string", "string", ...],
-  "missing_skills": ["string", "string", ...],
-  "improvement_tips": ["string", "string", ...],
-  "questions": ["string", "string", "string", ...]
+  "questions": [
+  {{
+      "question": "What specific metrics or numbers can you provide for your achievements in [relevant area]?",
+      "example": "Increased sales by 25% in Q3 2023, reducing customer churn by 15%"
+    }},
+    {{
+      "question": "Do you have experience with [missing skill] that wasn't mentioned in your resume?",
+      "example": "3 years experience with Python data analysis using Pandas and NumPy"
+    }},
+    "...
+  ]
 }}
 
-JD:
-\"\"\"{jd}\"\"\"
+Job Description:
+{jd_text}
 
-Resume:
-\"\"\"{resume_text}\"\"\"
-
-Respond only in valid JSON format.
+Resume Text:
+{resume_text}
 """
+    try:
+        payload = {
+            "model_name": "mistral:7b-instruct",
+            "prompt": prompt,
+            "actual_data": f"Job Description:\n{jd_text}\n\nResume Text:\n{resume_text}",
+            "temperature": 0.2,
+            "top_p": 0.9,
+            "max_tokens": 5000,
+            "top_k": 40,
+            "repeat_penalty": 1.1,
+            "num_ctx": 3500,
+            "num_thread": 4,
+            "stop": ["\n\n", "Human:"],
+            "conversation_history": []
+        }
 
-        response = client.chat.completions.create(
-            # model="gpt-4o",
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.1,
-            max_tokens=1000
+        response = requests.post(
+            OLLAMA_BASE_URL, 
+            json=payload
         )
 
-        # Get raw response from GPT
-        result = response.choices[0].message.content.strip()
+        if response.status_code != 200:
+            return jsonify({"error": f"Ollama API error: {response.text}"}), 500
+            
+        result = response.json()
+        
+        # Check if the response contains the expected structure
+        if not result.get("success", False):
+            return jsonify({"error": f"Ollama API returned unsuccessful response: {result.get('message', 'Unknown error')}"}), 500
+            
+        response_text = result.get("response", "")
 
-        # Remove markdown formatting (e.g., json ... )
-        if result.startswith("```"):
-            result = result.strip("`").strip()
-            if result.lower().startswith("json"):
-                result = result[4:].strip()
-
-        # Attempt to parse as JSON
+        # Extract JSON from response
         try:
-            parsed_result = json.loads(result)
-        except json.JSONDecodeError:
-            # Fallback using ast.literal_eval if GPT returns Python-style dict
-            parsed_result = ast.literal_eval(result)
+            json_start = response_text.find('{')
+            json_end = response_text.rfind('}') + 1
+            if json_start != -1 and json_end != -1:
+                json_str = response_text[json_start:json_end]
+                result_dict = json.loads(json_str)
+            else:
+                result_dict = json.loads(response_text)
+        except json.JSONDecodeError as e:
+            return jsonify({"error": f"AI returned invalid JSON: {str(e)}"}), 500
 
-        # Normalize questions if it's a string
-        questions = parsed_result.get("questions", [])
-        if isinstance(questions, str):
-            questions = [q.strip() for q in re.split(r'[\n\-•]', questions) if q.strip()]
-
-        return jsonify({
-            "ats_score": parsed_result.get("ats_score", 0),
-            "feedback": parsed_result.get("feedback", "No feedback generated."),
-            "strengths": parsed_result.get("strengths", []),
-            "weaknesses": parsed_result.get("weaknesses", []),
-            "matching_skills": parsed_result.get("matching_skills", []),
-            "missing_skills": parsed_result.get("missing_skills", []),
-            "improvement_tips": parsed_result.get("improvement_tips", []),
-            "questions": questions
-        })
-
+        return jsonify(result_dict)
+    except requests.exceptions.Timeout:
+        return jsonify({"error": "Ollama API request timed out"}), 500
+    except requests.exceptions.RequestException as e:
+        current_app.logger.error(f"Ollama API connection error: {str(e)}")
+        return jsonify({"error": f"Connection error: {str(e)}"}), 500
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": f"Failed to generate questions: {str(e)}"}), 500

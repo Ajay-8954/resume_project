@@ -6,6 +6,10 @@ from flask import Blueprint, request, jsonify, send_file, current_app
 from app.utils.file_utils import find_and_replace_in_doc, extract_json_from_response
 from app.utils.ai_helpers import client
 import json # <-- Make sure you have this import for the new route
+import requests
+
+
+OLLAMA_BASE_URL= os.getenv("OLLAMA_BASE_URL")
 
 optimize_bp = Blueprint('optimize', __name__)
 
@@ -23,7 +27,6 @@ def insert_paragraph_after(paragraph, text, style):
 @optimize_bp.route("/optimize_resume", methods=["POST"])
 def optimize_resume_route():
     """Optimize resume based on user answers to questions"""
-    # THIS ENTIRE FUNCTION REMAINS UNCHANGED
     data = request.get_json()
     jd_text = data.get('jd_text')
     answers = data.get('answers')
@@ -51,71 +54,125 @@ def optimize_resume_route():
         if a.strip():
             formatted_answers.append(f"Question: {q}\nAnswer: {a}\n")
     
+    # Define the exact JSON structure we expect
+    json_structure = {
+        "skills_to_add": ["Skill1", "Skill2", "Skill3"],
+        "project_enhancements": [
+            {
+                "anchor_bullet": "Existing bullet point text",
+                "new_bullet_to_add": "• New enhanced bullet point"
+            }
+        ],
+        "bullet_point_changes": [
+            {
+                "find": "Original text to find",
+                "replace": "Enhanced replacement text"
+            }
+        ]
+    }
+    
     prompt = f"""
-You are an expert Career Strategist. Your mission is to surgically enhance a resume to align with a Job Description. Your suggestions must be strong enough to justify a score increase from {old_score}/100 to at least {target_score}/100.
-**Perform these three actions:**
-1.  **ADD MISSING SKILLS:** Identify 3-6 critical skills from the Job Description that are missing from the resume's SKILLS section.
-2.  **ENHANCE PROJECTS WITH NEW BULLETS:** For 1-3 projects in the 'PROFESSIONAL EXPERIENCE' section, identify a missing key achievement that aligns with the JD. Suggest 3-4 high-impact new bullet point to add to that specific project.
-3.  **TRANSFORM EXISTING BULLETS:** Rewrite 2-3 existing bullet points to be more impactful with resume and JD point of view.
-**CONTEXT:**
-**Job Description:**\n{jd_text}
-**Candidate Answers:**\n{"".join(formatted_answers)}
-**Original Resume:**\n{original_resume_text}
-**REQUIRED JSON OUTPUT FORMAT:**
-You MUST return ONLY a valid JSON object with EXACTLY three keys: "skills_to_add", "project_enhancements", and "bullet_point_changes".
-- `skills_to_add`: An array of strings for missing skills. Example: `["Hadoop", "React", "Scrum"]` so on..
-- `project_enhancements`: An array of objects. For each object, provide:
-    - `anchor_bullet`: The FULL TEXT of an existing bullet point inside the project where the new bullet should be added. The new bullet will be inserted AFTER privious one.
-    - `new_bullet_to_add`: The text of the new bullet point to insert, starting with the bullet character '•'.
-- `bullet_point_changes`: An array of objects for find/replace transformations.
-**EXAMPLE JSON OUTPUT: 1**
-{{
-  "skills_to_add": ["Hadoop", "React", "Scrum"],
-  "project_enhancements": [
-    {{
-      "anchor_bullet": "Follows design patterns (like, MVC) and uses logging techniques for better debugging, along with external config file management for flexible settings.",
-      "new_bullet_to_add": "• Applied Scrum and Agile methodologies to manage development sprints, prioritize features, and ensure iterative improvements based on feedback."
-    }}
-  ],
-  "bullet_point_changes": [
-    {{
-      "find": "Developed the backend for an Online Food Ordering System using Java and JDBC, enabling smooth order and cart management.",
-      "replace": "Engineered the service-oriented backend for an online ordering platform using Java and JDBC, focusing on scalable and reliable transaction processing."
-    }}
-  ]
-}}
-**EXAMPLE JSON OUTPUT:2**
-{{
-  "skills_to_add": ["SEO/SEM", "Google Analytics", "HubSpot"],
-  "project_enhancements": [
-    {{
-      "anchor_bullet": "Managed social media content calendar across three platforms (Facebook, Instagram, Twitter).",
-      "new_bullet_to_add": "• Analyzed campaign performance data using Google Analytics to identify key trends, leading to a 15% increase in audience engagement in Q3."
-    }}
-  ],
-  "bullet_point_changes": [
-    {{
-      "find": "Responsible for creating weekly email newsletters for the company.",
-      "replace": "Authored and distributed weekly email newsletters to a subscriber base of 10,000+, achieving an average open rate of 25% and a 5% click-through rate."
-    }}
-  ]
-}}
-Now, generate the JSON output.
+CRITICAL INSTRUCTION: YOU MUST RETURN ONLY VALID JSON. DO NOT INCLUDE ANY OTHER TEXT, ANALYSIS, OR EXPLANATIONS.
+
+Analyze this resume against the job description and return ONLY a JSON object with this exact structure:
+
+{json.dumps(json_structure, indent=2)}
+
+JOB DESCRIPTION:
+{jd_text}
+
+CANDIDATE ANSWERS:
+{"".join(formatted_answers)}
+
+RESUME CONTENT:
+{original_resume_text[:12000]}
+
+ANALYSIS RULES:
+1. Tailoring Score (35% weight): Match JD requirements against resume content
+2. Content Score (20% weight): Evaluate relevance and evidence for JD requirements  
+3. Format Score (15% weight): Check ATS compatibility and professional layout
+4. Sections Score (15% weight): Verify essential sections are present
+5. Style Score (15% weight): Assess language quality and professionalism
+
+RETURN ONLY JSON. NO OTHER TEXT.
 """
     
     try:
-        response = client.chat.completions.create(
-            # model="gpt-4o",
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.2,
-            response_format={"type": "json_object"},
-            timeout=120.0
-        )
+        payload = {
+            "model_name": "mistral:7b-instruct",  # Try a different model if mistral isn't working
+            "prompt": prompt,
+            "actual_data": original_resume_text[:12000],
+            "temperature": 0.1,  # Lower temperature for more deterministic output
+            "top_p": 0.9,
+            "max_tokens": 2000,
+            "top_k": 40,
+            "repeat_penalty": 1.1,
+            "num_ctx": 4096,
+            "num_thread": 4,
+            "stop": ["\n\n", "Human:", "```", "Analysis:", "Here is", "The resume", "Name:"],
+            "conversation_history": []
+        }
         
-        response_text = response.choices[0].message.content
-        optimization_data = extract_json_from_response(response_text)
+        current_app.logger.info(f"Sending request to Ollama with prompt: {prompt[:200]}...")
         
+        response = requests.post(OLLAMA_BASE_URL, json=payload)
+
+        if response.status_code != 200:
+            return jsonify({"error": f"Ollama API error: {response.text}"}), 500
+        
+        result = response.json()
+        
+        # Check if the response contains the expected structure
+        if not result.get("success", False):
+            return jsonify({"error": f"Ollama API returned unsuccessful response: {result.get('message', 'Unknown error')}"}), 500
+            
+        response_text = result.get("response", "")
+
+        current_app.logger.info(f"Raw AI response: {response_text[:500]}...")
+        
+        # Enhanced JSON extraction with better error handling
+        cleaned_text = response_text.strip()
+        
+        # Remove markdown code blocks if present
+        if cleaned_text.startswith('```json'):
+            cleaned_text = cleaned_text[7:]
+        if cleaned_text.startswith('```'):
+            cleaned_text = cleaned_text[3:]
+        if cleaned_text.endswith('```'):
+            cleaned_text = cleaned_text[:-3]
+        cleaned_text = cleaned_text.strip()
+        
+        # Try to parse the JSON
+        try:
+            optimization_data = json.loads(cleaned_text)
+        except json.JSONDecodeError as e:
+            current_app.logger.error(f"JSON parsing failed. Cleaned response: {cleaned_text[:500]}")
+            
+            # Try to extract JSON using more aggressive methods
+            json_match = re.search(r'\{.*\}', cleaned_text, re.DOTALL)
+            if json_match:
+                try:
+                    optimization_data = json.loads(json_match.group())
+                    current_app.logger.info("Successfully extracted JSON using regex fallback")
+                except json.JSONDecodeError:
+                    # If it's still not JSON, try a different approach
+                    return jsonify({
+                        "error": "AI returned analysis instead of JSON", 
+                        "raw_preview": cleaned_text[:200] + "...",
+                        "solution": "Try using a different model or simplifying the prompt"
+                    }), 500
+            else:
+                return jsonify({
+                    "error": "AI returned analysis instead of JSON", 
+                    "raw_preview": cleaned_text[:200] + "...",
+                    "solution": "Try using a different model or simplifying the prompt"
+                }), 500
+
+        # Validate the structure
+        required_keys = ["skills_to_add", "project_enhancements", "bullet_point_changes"]
+        if not all(key in optimization_data for key in required_keys):
+            return jsonify({"error": "AI returned incomplete analysis structure"}), 500
+
         skills_to_add = optimization_data.get("skills_to_add", [])
         project_enhancements = optimization_data.get("project_enhancements", [])
         bullet_changes = optimization_data.get("bullet_point_changes", []) 
@@ -164,83 +221,6 @@ Now, generate the JSON output.
         current_app.logger.error(f"Optimization failed: {str(e)}")
         current_app.logger.error(f"AI response was: {locals().get('response_text', 'Not available')}")
         return jsonify({"error": f"Optimization failed: {str(e)}"}), 500
-
-
-# # ========================================================================
-# # === REPLACE THE OLD /parse_optimized_resume WITH THIS IMPROVED VERSION ===
-# # ========================================================================
-
-# @optimize_bp.route("/parse_optimized_resume", methods=["POST"])
-# def parse_optimized_resume():
-#     """
-#     This is the CORRECT and SIMPLE endpoint for the "Design in Builder" button.
-#     It receives the FINAL, already-optimized .docx file from the frontend,
-#     extracts its text, and asks the AI to parse that text into JSON.
-#     """
-#     if 'optimized_resume_file' not in request.files:
-#         return jsonify({"error": "Optimized resume file is required."}), 400
-
-#     file = request.files['optimized_resume_file']
-
-#     try:
-#         from app.utils.file_utils import extract_text_builder
-#         final_optimized_text = extract_text_builder(file, file.filename)
-#     except Exception as e:
-#         return jsonify({"error": f"Failed to extract text from optimized file: {str(e)}"}), 500
-    
-#     # --- CHANGE 1: A more detailed JSON structure ---
-#     target_json_structure = """
-#     {
-#         "Name": "Full Name", "jobTitle": "Job Title", "email": "email@example.com", "phone": "123-456-7890", "location": "City, Country", "linkedin": "https://linkedin.com/...", "github": "https://github.com/...",
-#         "summary": "Professional summary from the text.",
-#         "experience": [{"jobTitle": "...", "company": "...", "startDate": "...", "endDate": "...", "description": "..."}],
-#         "internship": [{"jobTitle": "...", "company": "...", "startDate": "...", "endDate": "...", "description": "..."}],
-#         "education": [{"degree": "...", "school": "...", "startDate": "...", "endDate": "..."}],
-#         "skills": ["..."],
-#         "languages": ["..."], "interests": ["..."], "achievements": [{"title": "...", "points": ["..."]}],
-#         "projects": [{"title": "...", "startDate": "...", "endDate": "...", "tech": "...", "points": ["..."]}],
-#         "certifications": [{"name": "...", "issuer": "...", "Date": "..."}],
-#         "other_details": "Any text that doesn't fit into the other categories, like 'References available upon request'."
-#     }
-#     """
-
-#     # --- CHANGE 2: Stronger, more explicit instructions for the AI ---
-#     final_prompt = f"""
-# You are a meticulous and exhaustive data extraction engine. Your only task is to parse the following resume text and structure it perfectly into the provided JSON format.
-
-# **CRITICAL RULES:**
-# 1.  **EXTRACT EVERYTHING:** You MUST capture every single word and detail from the resume text. Do not omit, summarize, or change any information.
-# 2.  **NO DATA LOSS:** If you find a piece of text that does not clearly fit into a specific field (like 'experience' or 'projects'), you MUST place it in the `"other_details"` field. Do not discard any data.
-# 3.  **COPY VERBATIM:** All text content must be copied exactly as it appears.
-
-# FINAL RESUME TEXT TO PARSE:
-# ---
-# {final_optimized_text}
-# ---
-
-# REQUIRED JSON STRUCTURE:
-# {target_json_structure}
-
-# Now, generate the complete and exhaustive JSON object based on the provided text.
-# """
-
-#     try:
-#         final_response = client.chat.completions.create(
-#             # model="gpt-4o",
-#             model="gpt-3.5-turbo",
-#             messages=[{"role": "user", "content": final_prompt}],
-#             temperature=0.0, # Set temperature to 0 for maximum determinism and accuracy
-#             response_format={"type": "json_object"}
-#         )
-#         final_json_data = json.loads(final_response.choices[0].message.content)
-#         return jsonify(final_json_data)
-        
-#     except Exception as e:
-#         current_app.logger.error(f"Final JSON parsing failed: {str(e)}")
-#         return jsonify({"error": f"Failed to generate resume JSON for builder: {str(e)}"}), 500
-
-
-
 # ========================================================================
 # === THIS IS THE NEW, CORRECTED ROUTE FOR THE "DESIGN IN BUILDER" BUTTON ===
 # ========================================================================
@@ -266,106 +246,171 @@ def parse_final_resume_to_json():
         return jsonify({"error": f"Failed to extract text from optimized file: {str(e)}"}), 500
     
     # The JSON structure your TemplateBuilder expects
-    target_json_structure = """
-    {
-            "Name": "Full Name",
-            "jobTitle": "Job Title",
-            "email": "email@example.com",
-            "phone": "123-456-7890",
-            "location": "City, Country",
-            "linkedin": "https://linkedin.com/...",
-            "github": "https://github.com/...",
-            "summary": "Professional summary...",
-            "objective": "Carrer Objectives",
-            "experience": [
-                {{
-                    "jobTitle": "Job Title",
-                    "company": "Company Name",
-                    "startDate": "Month Year",
-                    "endDate": "Month Year",
-                    "description": ["Point 1", "Point 2"]
-                }}
-            ],
-            "internship": [
-                {{
-                    "role": "Job Title",
-                    "company": "Company Name",
-                    "startDate": "Month Year",
-                    "endDate": "Month Year",
-                    "description": ["Point 1", "Point 2"]
-                }}
-            ],
-            "education": [
-                {{
-                    "degree": "Degree Name",
-                    "school": "School Name",
-                    "level": "type of education level",
-                    "startDate": "Year",
-                    "endDate": "Year",
-                    "cgpa": "X.XX/4.0"  
-                }}
-            ],
-            "skills": ["Skill1", "Skill2"],
-            "languages": ["Language1", "Language2"],
-            "interests": ["Interest1", "Interest2"],
-            "achievements": [
-                {{
-                    "title": "Achievement Title",
-                    "description":" "
-                }}
-            ],
-            "projects": [
-                {{
-                    "title": "Project Title",
-                    "startDate": "Month Year",
-                    "endDate": "Month Year",
-                    "tech": "Tools/Tech Stack",
-                    "description": ["Point 1", "Point 2"]
-                }}
-            ],
-            
-             "certifications": [
-                {{
-                    "name": "Certification name",
-                    "issuer": "name of the issuer",
-                    "Date": "Month Year",
-                }}
-            ]
+    target_json_structure = {
+        "Name": "Full Name",
+        "jobTitle": "Job Title",
+        "email": "email@example.com",
+        "phone": "123-456-7890",
+        "location": "City, Country",
+        "linkedin": "https://linkedin.com/...",
+        "github": "https://github.com/...",
+        "summary": "Professional summary...",
+        "objective": "Career Objectives",
+        "experience": [
+            {
+                "jobTitle": "Job Title",
+                "company": "Company Name",
+                "startDate": "Month Year",
+                "endDate": "Month Year",
+                "description": ["Point 1", "Point 2"]
+            }
+        ],
+        "internship": [
+            {
+                "role": "Job Title",
+                "company": "Company Name",
+                "startDate": "Month Year",
+                "endDate": "Month Year",
+                "description": ["Point 1", "Point 2"]
+            }
+        ],
+        "education": [
+            {
+                "degree": "Degree Name",
+                "school": "School Name",
+                "level": "type of education level",
+                "startDate": "Year",
+                "endDate": "Year",
+                "cgpa": "X.XX/4.0"  
+            }
+        ],
+        "skills": ["Skill1", "Skill2"],
+        "languages": ["Language1", "Language2"],
+        "interests": ["Interest1", "Interest2"],
+        "achievements": [
+            {
+                "title": "Achievement Title",
+                "description": " "
+            }
+        ],
+        "projects": [
+            {
+                "title": "Project Title",
+                "startDate": "Month Year",
+                "endDate": "Month Year",
+                "tech": "Tools/Tech Stack",
+                "description": ["Point 1", "Point 2"]
+            }
+        ],
+        "certifications": [
+            {
+                "name": "Certification name",
+                "issuer": "name of the issuer",
+                "Date": "Month Year"
+            }
+        ]
     }
-    """
 
     final_prompt = f"""
+CRITICAL INSTRUCTION: YOU MUST RETURN ONLY VALID JSON. DO NOT INCLUDE ANY OTHER TEXT, ANALYSIS, OR EXPLANATIONS.
+
 You are an expert data extractor. Your task is to parse the following complete resume text and structure it into a clean JSON object.
 Do not invent any information. Extract the data exactly as it appears in the text.
 
-FINAL RESUME TEXT:
+RESUME TEXT TO PARSE:
 ---
-{final_optimized_text}
+{final_optimized_text[:15000]}
 ---
 
-REQUIRED JSON STRUCTURE:
-{target_json_structure}
+REQUIREMENTS:
+1. Extract data exactly as it appears in the resume text
+2. Do not invent any information - use only what's present
+3. Return ONLY valid JSON, no explanatory text
+4. Follow this exact structure:
+{json.dumps(target_json_structure, indent=2)}
 
 Now, generate the JSON object based on the provided text.
 """
 
     try:
-        final_response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": final_prompt}],
-            temperature=0.1,
-            response_format={"type": "json_object"}
-        )
-        final_json_data = json.loads(final_response.choices[0].message.content)
+        payload = {
+            "model_name": "mistral:7b-instruct",
+            "prompt": final_prompt,
+            "actual_data": final_optimized_text[:15000],
+            "temperature": 0.1,
+            "top_p": 0.9,
+            "max_tokens": 2500,
+            "top_k": 40,
+            "repeat_penalty": 1.1,
+            "num_ctx": 4096,
+            "num_thread": 4,
+            "stop": ["\n\n", "Human:", "```", "Analysis:", "Here is", "The resume"],
+            "conversation_history": []
+        }
+        
+        current_app.logger.info(f"Sending parse request to Ollama with text length: {len(final_optimized_text)}")
+        
+        response = requests.post(OLLAMA_BASE_URL, json=payload)  # 2 minute timeout
+
+        if response.status_code != 200:
+            current_app.logger.error(f"Ollama API error: {response.status_code} - {response.text}")
+            return jsonify({"error": f"Ollama API error: {response.text}"}), 500
+    
+        result = response.json()
+        
+        # Check if the response contains the expected structure
+        if not result.get("success", False):
+            return jsonify({"error": f"Ollama API returned unsuccessful response: {result.get('message', 'Unknown error')}"}), 500
+            
+        response_text = result.get("response", "")
+
+        current_app.logger.info(f"Raw AI response: {response_text[:500]}...")
+        
+        # Enhanced JSON extraction with better error handling
+        cleaned_text = response_text.strip()
+        
+        # Remove markdown code blocks if present
+        if cleaned_text.startswith('```json'):
+            cleaned_text = cleaned_text[7:]
+        if cleaned_text.startswith('```'):
+            cleaned_text = cleaned_text[3:]
+        if cleaned_text.endswith('```'):
+            cleaned_text = cleaned_text[:-3]
+        cleaned_text = cleaned_text.strip()
+        
+        # Try to parse the JSON
+        try:
+            final_json_data = json.loads(cleaned_text)
+        except json.JSONDecodeError as e:
+            current_app.logger.error(f"JSON parsing failed. Cleaned response: {cleaned_text[:500]}")
+            
+            # Try to extract JSON using more aggressive methods
+            json_match = re.search(r'\{.*\}', cleaned_text, re.DOTALL)
+            if json_match:
+                try:
+                    final_json_data = json.loads(json_match.group())
+                    current_app.logger.info("Successfully extracted JSON using regex fallback")
+                except json.JSONDecodeError:
+                    return jsonify({
+                        "error": "AI returned invalid JSON format", 
+                        "raw_preview": cleaned_text[:200] + "...",
+                        "hint": "The AI might be analyzing the resume content instead of returning JSON."
+                    }), 500
+            else:
+                return jsonify({
+                    "error": "AI returned analysis instead of JSON format", 
+                    "raw_preview": cleaned_text[:200] + "...",
+                    "hint": "The prompt may need stronger instructions to return only JSON."
+                }), 500
+        
         return jsonify(final_json_data)
         
+    except requests.exceptions.Timeout:
+        return jsonify({"error": "Resume parsing timed out after 2 minutes"}), 408
     except Exception as e:
         current_app.logger.error(f"Final JSON parsing failed: {str(e)}")
         return jsonify({"error": f"Failed to generate resume JSON for builder: {str(e)}"}), 500
-    
-    
-    
-    
+
 
 @optimize_bp.route("/generate-or-enhance-summary", methods=["POST"])
 def generate_or_enhance_summary():
@@ -385,29 +430,31 @@ def generate_or_enhance_summary():
     # Construct prompt based on whether existing_summary is provided
     if existing_summary:
         # Enhance mode: Only enhance the existing summary
-        prompt = f"""
-You are an expert Career Strategist tasked with enhancing an existing professional summary for a resume. The enhanced summary should refine the provided text, maintaining its core message and tone, to make it more polished, impactful, and professional. The summary must be 3-5 sentences long and suitable for a resume.
+        prompt = f"""CRITICAL INSTRUCTION: RETURN ONLY VALID JSON. DO NOT INCLUDE ANY OTHER TEXT.
 
-**CONTEXT:**
-**Existing Summary:**
-{existing_summary}
+ENHANCE PROFESSIONAL SUMMARY:
 
-**REQUIREMENTS:**
-- Enhance the existing summary to be more concise, professional, and impactful.
-- Maintain the original message and tone, improving clarity and word choice.
-- Do not add new information beyond what is provided in the existing summary.
-- Keep it concise (3-5 sentences, max 150 words).
-- Use a professional tone suitable for a resume.
-- Return the result in JSON format with a single key: `summary`.
+CONTEXT:
+Existing Summary: {existing_summary}
 
-**EXAMPLE OUTPUT:**
-{{
-  "summary": "Accomplished Software Engineer with over 5 years of experience, delivering high-quality web applications. Enhanced expertise in modern frameworks, driving system efficiency through scalable solutions."
-}}
-"""
+REQUIREMENTS:
+- Enhance the summary to be more concise, professional, and impactful
+- Maintain the original message and tone
+- Do not add new information beyond what is provided
+- Keep it concise (3-5 sentences, max 150 words)
+- Use professional tone suitable for a resume
+- RETURN ONLY JSON: {{"summary": "enhanced summary text here"}}
+
+EXAMPLE OUTPUT:
+{{"summary": "Accomplished Software Engineer with over 5 years of experience, delivering high-quality web applications. Enhanced expertise in modern frameworks, driving system efficiency through scalable solutions."}}
+
+Enhanced summary:"""
+        
+        # Use existing summary as actual_data
+        actual_data = existing_summary
+        
     else:
         # Generate mode: Create a new summary using experience, skills, and projects
-        # Validate input
         if not any([experience, skills, projects]):
             return jsonify({"error": "At least one of experience, skills, or projects is required when generating a new summary."}), 400
 
@@ -434,56 +481,88 @@ You are an expert Career Strategist tasked with enhancing an existing profession
                 f"Technologies: {proj.get('tech', '')}\n"
             )
 
-        prompt = f"""
-You are an expert Career Strategist tasked with generating a concise, impactful professional summary for a resume. The summary should highlight the candidate's experience, skills, and projects, tailored to a professional context. The summary must be 3-5 sentences long, professional, and aligned with the provided context.
+        prompt = f"""CRITICAL INSTRUCTION: RETURN ONLY VALID JSON. DO NOT INCLUDE ANY OTHER TEXT.
 
-**CONTEXT:**
-**Experience:**
-{"".join(formatted_experience) if formatted_experience else "None provided"}
+GENERATE PROFESSIONAL SUMMARY:
 
-**Skills:**
-{formatted_skills}
+CONTEXT:
+Experience: {"".join(formatted_experience) if formatted_experience else "None provided"}
+Skills: {formatted_skills}
+Projects: {"".join(formatted_projects) if formatted_projects else "None provided"}
 
-**Projects:**
-{"".join(formatted_projects) if formatted_projects else "None provided"}
+REQUIREMENTS:
+- Generate professional summary reflecting experience, skills, and projects
+- Keep concise (3-4 sentences, max 60-70 words)
+- Use professional tone suitable for resume
+- Incorporate key achievements from experience and projects
+- Highlight relevant skills
+- RETURN ONLY JSON: {{"summary": "generated summary text here"}}
 
-**REQUIREMENTS:**
-- Generate a professional summary that reflects the candidate's experience, skills, and projects.
-- Keep it concise (3-5 sentences, max 150 words).
-- Use a professional tone suitable for a resume.
-- Incorporate key achievements or responsibilities from experience and projects.
-- Highlight relevant skills to showcase expertise.
-- Return the result in JSON format with a single key: `summary`.
+EXAMPLE OUTPUT:
+{{"summary": "Results-driven Software Engineer with over 5 years of experience developing scalable web applications at leading tech firms. Proficient in Java, Python, and cloud technologies, with a proven track record of delivering high-impact projects that enhance system performance."}}
 
-**EXAMPLE OUTPUT:**
-{{
-  "summary": "Results-driven Software Engineer with over 5 years of experience developing scalable web applications at leading tech firms. Proficient in Java, Python, and cloud technologies, with a proven track record of delivering high-impact projects that enhance system performance. Skilled in leading cross-functional teams to meet tight deadlines while maintaining code quality."
-}}
-"""
+Generated summary:"""
+        
+        # Combine experience, skills, and projects for actual_data
+        actual_data = f"Experience: {formatted_experience}\nSkills: {formatted_skills}\nProjects: {formatted_projects}"
     
     try:
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.3,  # Moderate temperature for balanced creativity and consistency
-            response_format={"type": "json_object"},
-            timeout=60.0
-        )
+        payload = {
+            "model_name": "mistral:7b-instruct",
+            "prompt": prompt,
+            "actual_data": actual_data[:5000],  # Limit to 5000 characters
+            "temperature": 0.3,
+            "top_p": 0.9,
+            "max_tokens": 300,
+            "top_k": 40,
+            "repeat_penalty": 1.1,
+            "num_ctx": 2048,
+            "num_thread": 4,
+            "stop": ["\n\n", "Human:", "```", "Analysis:", "Here is", "The summary"],
+            "conversation_history": []
+        }
         
-        response_text = response.choices[0].message.content
-        summary_data = json.loads(response_text)
+        current_app.logger.info(f"Sending summary request to Ollama with prompt: {prompt[:200]}...")
+        
+        response = requests.post(OLLAMA_BASE_URL, json=payload)  # 1.5 minute timeout
+        
+        if response.status_code != 200:
+            current_app.logger.error(f"Ollama API error: {response.status_code} - {response.text}")
+            return jsonify({"error": f"Ollama API error: {response.text}"}), 500
+            
+        result = response.json()
+        
+        # Check if the response contains the expected structure
+        if not result.get("success", False):
+            return jsonify({"error": f"Ollama API returned unsuccessful response: {result.get('message', 'Unknown error')}"}), 500
+            
+        response_text = result.get("response", "")
+        
+        current_app.logger.info(f"AI response: {response_text[:200]}...")
+        
+        # Extract JSON from response
+        try:
+            # Try to find JSON in the response
+            json_start = response_text.find('{')
+            json_end = response_text.rfind('}') + 1
+            if json_start != -1 and json_end != -1:
+                json_str = response_text[json_start:json_end]
+                summary_data = json.loads(json_str)
+            else:
+                # If no JSON found, try to parse directly
+                summary_data = json.loads(response_text)
+        except json.JSONDecodeError as e:
+            current_app.logger.error(f"JSON parsing failed. Response: {response_text}")
+            return jsonify({"error": f"Failed to parse JSON from AI response: {str(e)}"}), 500
         
         if not summary_data.get("summary"):
             return jsonify({"error": "Failed to generate a valid summary."}), 500
 
         return jsonify(summary_data)
         
-    except OpenAIError as e:
-        current_app.logger.error(f"OpenAI API error during summary generation/enhancement: {str(e)}")
-        return jsonify({"error": f"Failed to process summary: {str(e)}"}), 500
-    except json.JSONDecodeError as e:
-        current_app.logger.error(f"JSON parsing error: {str(e)}")
-        return jsonify({"error": "Invalid response format from AI model."}), 500
+    except requests.exceptions.Timeout:
+        return jsonify({"error": "Summary generation timed out after 1.5 minutes"}), 408
     except Exception as e:
-        current_app.logger.error(f"Unexpected error during summary generation/enhancement: {str(e)}")
+        current_app.logger.error(f"Summary generation/enhancement failed: {str(e)}")
         return jsonify({"error": f"Failed to process summary: {str(e)}"}), 500
+        

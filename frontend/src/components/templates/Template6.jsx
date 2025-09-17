@@ -61,6 +61,7 @@ const Template6 = forwardRef(({ data = {} }, ref) => {
       )}
 
       {/* WORK HISTORY */}
+       {experience.length > 0 && (
       <section className="template6-section">
         <div className="template6-left">WORK HISTORY</div>
         <div className="template6-right">
@@ -94,6 +95,7 @@ const Template6 = forwardRef(({ data = {} }, ref) => {
           ))}
         </div>
       </section>
+       )}
 
 
 
