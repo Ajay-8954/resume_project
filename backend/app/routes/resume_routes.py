@@ -1562,22 +1562,22 @@ li::before {
                 
                 
 
+
+
+
 .resume-container {
 width: 170mm;
   margin: 0 auto;
     min-height: 297mm;
-  padding: 30px;
   background-color: white;
   color: #333;
   box-sizing: border-box;
 }
 
-
 .resume-inner {
-  padding: 10mm; 
+  padding: 10mm;  /* reliable in PDF */
   box-sizing: border-box;
 }
-
 /* Header */
 .resume-header {
   text-align: center;
@@ -1716,7 +1716,7 @@ width: 170mm;
   font-size: 13px;
   margin-bottom: 5px;
   line-height: 1.5;
-    list-style-type: disc;
+    list-style-type: none;
 }
 
 
@@ -1738,27 +1738,36 @@ width: 170mm;
 }
 
 .edu-school {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   color: #000;
-  margin-bottom: 2px;
+  /* margin-bottom: 2px; */
 }
 
-.edu-degree {
+.template5-edu-degree {
   font-size: 13px;
-  color: #1e90ff;
+   margin: 0; /* Remove default margins */
+  line-height: 0.9; /* Consistent line height */
 }
 
 .edu-right {
   text-align: right;
   font-size: 12px;
   color: #555;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end; /* Right-align the content */
 }
 
 .edu-location {
   margin-bottom: 2px;
 }
 
+.template5-edu-dates {
+    font-size: 13px;
+  margin: 0;
+   line-height: 1.5;
+}
 
 /* skill section */
 .skills-section {
@@ -1855,45 +1864,37 @@ width: 170mm;
   color: #333;
   line-height: 1;
 }
-
-
-/* Optional: Utility classes */
-.date {
-  font-weight: normal;
-  color: #000;
-}
-
-.location {
-  color: #555;
-}
-
-                                   
-                                   """)
+ """)
                 
             elif template_id == "template6":
                 page.add_style_tag(content="""
 
+body{
+  margin:0;
+  padding:0;
+}
+
 .resume-inner {
-  padding: 0 10mm;  /* reliable in PDF */
+  padding: 7mm;  /* reliable in PDF */
   box-sizing: border-box;
 }
 
 
 .template6-resume {
+    width: 170mm;
+  min-height: 297mm;
   margin: 0 auto;
+  font-family: Arial, sans-serif;
   color: #333;
-  width: 170mm;
-    min-height: 297mm;
-  background-color: white;
-  box-sizing: border-box;
+    box-sizing: border-box;
 }
 
 /* HEADER */
 .template6-header {
   background-color: #e94b35;
   color: white;
-  padding: 20px;
   text-align: center;
+    padding: 20px;
 }
 
 .template6-header h1 {
@@ -1913,8 +1914,36 @@ width: 170mm;
 }
 
 /* SECTION LAYOUT */
+
+.template6-summary-section {
+  display: flex;
+  align-items: flex-start;  
+  border-bottom: 1px solid #ddd;
+  padding: 15px 0;
+}
+
+.template6-summary-left {
+  width: 40mm;
+  font-weight: bold;
+  color: #e94b35;
+  font-size: 13px;
+  text-transform: uppercase;
+}
+
+.template6-summary-right {
+  flex:1;
+}
+
+.template6-summary-right p {
+  margin: 0;
+  line-height: 1;
+  text-align: justify;
+  font-size: 13px;
+}
+
 .template6-section {
   display: flex;
+  align-items: flex-start;  
   border-bottom: 1px solid #ddd;
   padding: 15px 0;
 }
@@ -1924,16 +1953,20 @@ width: 170mm;
 }
 
 .template6-left {
-  width: 178px;
+  width: 40mm;        
+  min-width: 40mm;
   font-weight: bold;
   color: #e94b35;
   font-size: 13px;
-  text-transform: uppercase;
+  text-transform: uppercase;  
 }
 
+
+
 .template6-right {
-  flex: 1;
+  flex:1;
   font-size: 13px;
+  
 }
 
 /* EXPERIENCE */
@@ -2019,16 +2052,9 @@ width: 170mm;
   color: #555;
   margin-left: 10px;
 }
-body{
-  margin:0;
-  padding:0;
-}
 
 
-
-
-
-                                     """)
+    """)
 
             pdf_options = {
     "path": output_path,
@@ -2042,6 +2068,7 @@ body{
     },
      # This ensures CSS @page rules are respected
 }
+            
             page.pdf(**pdf_options)
             browser.close()
 
