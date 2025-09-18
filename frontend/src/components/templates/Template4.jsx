@@ -30,7 +30,7 @@ const Template4 = forwardRef(({ data = {} }, ref) => {
     <div ref={ref} className="resume">
               <div className="resume-inner">
       <header className="resume-headerr">
-        <h1>{Name}</h1>
+        <h1 className="uppercase">{Name}</h1>
         <h2 style={{ color: "#10c0d4" }}>{jobTitle}</h2>
         <div className="contact-info">
           {phone && <span>{phone} | </span>}

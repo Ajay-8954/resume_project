@@ -67,6 +67,7 @@ body {
 
 .info-internship{
   text-transform: capitalize;
+  font-size:12px;
 }
 
 
@@ -87,11 +88,11 @@ body {
 .details-t2 {
   color: #444;
   margin-top: 4px;
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .item-t2 .font-semibold {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
 }
 

@@ -1244,7 +1244,7 @@ body {
                 
             elif template_id == "template4":
                 page.add_style_tag(content="""
-                       .resume {
+ .resume {
   font-family: 'Helvetica Neue', Arial, sans-serif;
   width: 170mm;
   margin: 0 auto;
@@ -1263,7 +1263,8 @@ body {
 /* Header */
 .resume-headerr {
   text-align: left;
-  margin-bottom: 20px;
+  position: relative;
+  
 }
 
 .resume-headerr h1 {
@@ -1274,13 +1275,14 @@ body {
 
 .resume-headerr h2 {
   font-size: 15px;
-  margin-bottom: 10px;
 }
 
 .contact-info {
   font-size: 12px;
   color: #555;
   margin-bottom: 20px;
+  position: absolute;
+  top: 30px;
 }
 
 .contact-info span {
@@ -1294,11 +1296,12 @@ body {
   border-top: none;
 }
 
-.section-title {
-  font-size: 14px;
+.template-4-section-title {
+  font-size: 13px;
   font-weight: bold;
   text-transform: uppercase;
-   border-bottom: 1px solid black !important; 
+  border-bottom: 1px solid black !important; /* This single line adds the underline */
+  padding-bottom: 3px;
   margin-bottom: 10px;
   color: #333;
 }
@@ -1306,21 +1309,18 @@ body {
 .summary-text {
   font-size: 12px;
   line-height: 1.5;
+  margin-top:10px;
 }
 
 /* Two-column layout */
 .resume-body {
   display: grid;
-  grid-template-columns: 1fr 2fr;
-  gap: 30px;
+  grid-template-columns: 276px 1fr;
+  column-gap: 10px;
+  margin-top:30px;
 }
 
-.left-column,
-.right-column {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
+
 
 /* Skills */
 .skills {
@@ -1328,6 +1328,7 @@ body {
 }
 
 .skills-grid {
+  margin-top:10px;
   display: flex;
   flex-wrap: wrap;
   gap: 5px;
@@ -1343,6 +1344,7 @@ body {
   white-space: nowrap;
 }
 
+/* education styling */
 /* Education Section */
 .education {
   margin-top: 20px;
@@ -1350,6 +1352,7 @@ body {
 
 .education-container {
   margin-bottom: 1.5rem;
+  margin-top: 10px;
 }
 
 .education-upper {
@@ -1403,20 +1406,32 @@ body {
 
 
 /* Common item styling */
+
+.projects,
+.experience,
+.interests,
+.languages,
+.certifications,
+.education {
+  margin-top:15px;
+}
+
+
+
 .project-item,
 .experience-item,
 .achievement-item,
 .education-item {
   margin-bottom: 15px;
+  margin-top:10px;
 }
 
 .project-item h4,
 .experience-item h4,
 .achievement-item h4,
 .education-item h4 {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: bold;
-  margin-bottom: 5px;
 }
 
 .project-details,
@@ -1426,7 +1441,6 @@ body {
   font-size: 12px;
   font-style: italic;
   color: #777;
-  margin-bottom: 5px;
 }
 
 .project-details a {
@@ -1435,7 +1449,7 @@ body {
 }
 
 .project-title{
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .project-details a:hover {
@@ -1450,7 +1464,7 @@ body {
 
 
 .certifications .section-title {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: bold;
   text-transform: uppercase;
   margin-bottom: 10px;
@@ -1553,9 +1567,15 @@ li::before {
 .capitalize{
   text-transform: capitalize;
 }
-             
-                                   
-                                   """)
+
+.uppercase{
+  text-transform: uppercase;
+}
+
+.company{
+  margin-top: 1px;
+}
+ """)
                 
             elif template_id == "template5":
                 page.add_style_tag(content="""
