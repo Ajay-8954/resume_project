@@ -217,7 +217,7 @@ const Template6 = forwardRef(({ data = {} }, ref) => {
                     <div key={i} className="template6-achievement">
                       {ach.title && (
                         <div className="template6-achievement-title">
-                          • {ach.title}
+                          {ach.title}
                         </div>
                       )}
                       {ach.description && (

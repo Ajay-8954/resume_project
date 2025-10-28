@@ -56,7 +56,6 @@ body{
   font-weight: bold;
   color: #e94b35;
   font-size: 13px;
-
   text-transform: uppercase;
 }
 
@@ -96,11 +95,12 @@ body{
 .template6-right {
   flex:1;
   font-size: 13px;
+
   
 }
 
 /* EXPERIENCE */
-.template6-projects .template6-experience {
+.template6-projects ,.template6-experience {
   margin-bottom: 15px;
 }
 
@@ -109,6 +109,7 @@ body{
   justify-content: space-between;
   font-size: 13px;
   font-weight: bold;
+  text-transform: capitalize;
 }
 
 .template6-date {
@@ -120,6 +121,10 @@ body{
   font-style: italic;
   font-size: 13px;
   margin-bottom: 6px;
+}
+
+.template6-company{
+  text-transform: capitalize;
 }
 
 .template6-experience ul {
@@ -172,13 +177,98 @@ body{
   font-size: 13px;
 }
 
-.template6-achievement-title {
+.template6-achievement-title{
+    font-size: 13px;
   font-weight: bold;
-  margin-bottom: 3px;
-}
+       }                               
+
+
 
 .template6-achievement-desc {
   font-size: 12px;
-  color: #555;
-  margin-left: 10px;
 }
+                                   
+@media print {
+    
+     @page {
+    size: A4;
+    margin-top:5mm;
+  }
+
+  @page :first {
+    margin:0mm;  
+   
+  }
+
+  @page :not(:first) {
+    margin-top: 5mm; 
+    margin-bottom: 5mm;
+  }
+body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .template6-resume {
+    width: 100%;
+    min-height: 100vh;
+    box-shadow: none;
+  }
+
+  .resume-inner {
+    margin: 0mm 10mm 10mm 10mm;
+    box-sizing: border-box;
+  }
+
+  .template6-header {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    page-break-after: avoid;
+  }
+
+  .template6-summary-section,
+  .template6-section {
+  
+    orphans: 3;
+    widows: 3;
+  }
+
+  .template6-experience,
+  .template6-achievement {
+
+    orphans: 2;
+    widows: 2;
+  }
+
+  .template6-experience ul,
+  .template6-achievement-desc {
+    page-break-inside: auto;
+    break-inside: auto;
+  }
+
+
+
+  .template6-skills-grid {
+    break-inside: avoid;
+  }
+
+  .template6-job-header {
+    page-break-after: avoid;
+    break-after: avoid;
+  }
+
+  .template6-skills-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  ul {
+    list-style-type: disc;
+    padding-left: 20px;
+  }
+
+  li {
+    margin-bottom: 4px;
+  }
+}
+   

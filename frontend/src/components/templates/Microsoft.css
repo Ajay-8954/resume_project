@@ -10,7 +10,7 @@ body {
 
 @page {
   size: A4;
-  margin: 10mm;
+  margin: 7mm;
 }
 
 /* Reset default list styles */
@@ -109,7 +109,8 @@ ul, li {
 
 .section-text {
   font-size: 0.75rem;
-
+  widows: 3;
+  orphans: 2;
 }
 
 .work-item,
@@ -220,7 +221,6 @@ ul, li {
 /* Work Experience Section */
 .work-item {
   margin-bottom: 1rem;
-  page-break-inside: avoid;
 }
 
 .work-row {
@@ -330,11 +330,19 @@ ul, li {
     background: white;
   }
 
-  section,
   .work-item,
   .project-item,
   .education-item,
   .achievement-item {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .work-list li,
+  .project-points li,
+  .achievement-item ul li,
+  .skills-grid li,
+  .list-style li {
     page-break-inside: avoid;
     break-inside: avoid;
   }

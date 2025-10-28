@@ -290,7 +290,7 @@ def parse_final_resume_to_json():
         "achievements": [
             {
                 "title": "Achievement Title",
-                "description": " "
+                "description": ["Point 1", "Point 2"]
             }
         ],
         "projects": [

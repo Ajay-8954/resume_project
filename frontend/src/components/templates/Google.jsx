@@ -14,10 +14,9 @@ const Google = forwardRef(({ data = {} }, ref) => {
 
   const {
     Name = "Jennifer Jobscan",
-    jobTitle = "Product Manager",
     email = "jennifer@jobscan.co",
     phone = "(123) 456-7890",
-    location="",
+    location = "",
     linkedin,
     github,
     summary = "",
@@ -34,164 +33,128 @@ const Google = forwardRef(({ data = {} }, ref) => {
   } = data || {};
 
   return (
-    <div
-      ref={ref}
-      className="resume-t2 "
-    
-    >
+    <div ref={ref} className="resume-t2">
       {/* Header */}
-      <div className="header-t2 text-center pb-3">
-        <h1 className="font-bold text-[24px]">{Name}</h1>
-        <div className="contact-info-t2 mt-1 space-x-4 text-[10px]">
-          <span className="mr-2">
+      <header className="header-t2">
+        <h1>{Name}</h1>
+        <div className="contact-info-t2">
+          <span>
             <strong>Phone:</strong> {phone}
           </span>
-          <span className="mr-2">
-            <strong>Email:</strong> {email}  
+          <span>
+            <strong>Email:</strong> {email}
           </span>
-          {linkedin && (
-            <a href={linkedin} className="mr-2 text-blue-500 hover:underline">
-              LinkedIn
-            </a>
-          )}
-          {github && (
-            <a href={github} className="mr-2 text-blue-500 hover:underline">
-              Github
-            </a>
-          )}
-
-             <span className="mr-2 info-location">
+          {linkedin && <a href={linkedin}>LinkedIn</a>}
+          {github && <a href={github}>Github</a>}
+          <span className="info-location">
             <strong>Location:</strong> {location}
           </span>
         </div>
-      </div>
+      </header>
 
       {/* Summary/Objective */}
       {toggle === "experienced" && summary && (
-        <section className="section-t2 mt-3">
-          <h2 className="section-title-t2 font-semibold border-b text-[13px]">
-            PROFESSIONAL SUMMARY
-          </h2>
-          <p className="details-t2 mt-1 text-justify text-[11px]">{summary}</p>
+        <section className="section-t2">
+          <h2 className="section-title-t2">PROFESSIONAL SUMMARY</h2>
+          <p className="details-t2">{summary}</p>
         </section>
       )}
 
       {toggle === "fresher" && objective && (
-        <section className="section-t2 mt-3">
-          <h2 className="section-title-t2 font-semibold border-b text-[13px]">
-            CAREER OBJECTIVE
-          </h2>
-          <p className="details-t2 mt-1 text-justify text-[11px]">
-            {objective}
-          </p>
+        <section className="section-t2">
+          <h2 className="section-title-t2">CAREER OBJECTIVE</h2>
+          <p className="details-t2">{objective}</p>
         </section>
       )}
 
-
-          {/* Skills */}
+      {/* Skills */}
       {skills.length > 0 && (
-        <section className="section-t2 skills-section mt-3">
-          <h2 className="section-title-t2 font-semibold border-b text-[13px]">
-            SKILLS
-          </h2>
-          <ul className="grid grid-cols-2 gap-1 list-disc list-inside pl-5">
+        <section className="section-t2 skills-section">
+          <h2 className="section-title-t2">SKILLS</h2>
+          <ul>
             {skills.map((skill, idx) => (
-              <li key={idx} className="text-[10px] info-skill">{skill}</li>
+              <li key={idx} className="info-skill">{skill}</li>
             ))}
           </ul>
         </section>
       )}
 
-
-           {/* Experience */}
+      {/* Experience */}
       {experience.length > 0 && (
-        <section className="section-t2 mt-3">
-          <h2 className="section-title-t2 font-semibold border-b text-[13px]">
-            EXPERIENCE
-          </h2>
+        <section className="section-t2">
+          <h2 className="section-title-t2">EXPERIENCE</h2>
           {experience.map((item, idx) => (
-            <div key={idx} className="item-t2 mt-1">
-              <div className="flex justify-between items-baseline">
+            <div key={idx} className="item-t2">
+              <div className="item-header">
                 <div>
-                  <p className="font-semibold text-[11px] info-internship">
-                    {item.company} - {item.jobTitle} , {item.location}
+                  <p className="info-internship">
+                    {item.company} - {item.jobTitle}, {item.location}
                   </p>
                 </div>
-                <p className="text-gray-700 text-[10px]">
+                <p className="date-range">
                   {formatDate(item.startDate)} - {formatDate(item.endDate)}
                 </p>
               </div>
-              <ul className="list-disc list-inside ml-4 mt-1 text-gray-800 leading-tight">
+              <ul>
                 {Array.isArray(item.description)
-                  ? item.description.map((point, i) => (
-                      <li key={i} className="text-[10px]">{point}</li>
-                    ))
+                  ? item.description.map((point, i) => <li key={i}>{point}</li>)
                   : (item.description || "")
                       .split("\n")
                       .filter(Boolean)
                       .map((point, i) => (
-                        <li key={i} className="text-[10px]">{point.replace(/^\s*•\s*/, "").trim()}</li>
+                        <li key={i}>{point.replace(/^\s*•\s*/, "").trim()}</li>
                       ))}
               </ul>
             </div>
           ))}
         </section>
       )}
-
 
       {/* Education */}
       {education.length > 0 && (
-        <section className="section-t2 mt-3">
-          <h2 className="section-title-t2 font-semibold border-b text-[13px]">
-            EDUCATION
-          </h2>
+        <section className="section-t2">
+          <h2 className="section-title-t2">EDUCATION</h2>
           {education.map((edu, idx) => (
-            <div key={idx} className="item-t2 mt-1">
-              <div className="flex justify-between items-baseline">
+            <div key={idx} className="item-t2">
+              <div className="item-header">
                 <div>
-                  <p className="font-semibold text-[11px] info-capital">{edu.school}</p>
-                  <p className="text-[10px]">{edu.degree} , {edu.location}</p>
+                  <p className="info-capital">{edu.school}</p>
+                  <p>{edu.degree}, {edu.location}</p>
                 </div>
-                <p className="text-gray-700 text-[10px]">
+                <p className="date-range">
                   {formatDate(edu.startDate)} - {formatDate(edu.endDate)}
                 </p>
               </div>
-              {edu.cgpa && <p className="text-gray-700 text-[10px]">CGPA: {edu.cgpa}</p>}
+              {edu.cgpa && <p>CGPA: {edu.cgpa}</p>}
             </div>
           ))}
         </section>
       )}
 
-    
-
-      {/* Internship */}
+      {/* Internships */}
       {internships.length > 0 && (
-        <section className="section-t2 mt-3">
-          <h2 className="section-title-t2 font-semibold border-b text-[13px]">
-            INTERNSHIP
-          </h2>
+        <section className="section-t2">
+          <h2 className="section-title-t2">INTERNSHIP</h2>
           {internships.map((item, idx) => (
-            <div key={idx} className="item-t2 mt-1">
-              <div className="flex justify-between items-baseline">
+            <div key={idx} className="item-t2">
+              <div className="item-header">
                 <div>
-                  <p className="font-semibold text-[11px] info-internship">
-                    {item.company} - {item.jobTitle || item.role} , {item.location}
+                  <p className="info-internship">
+                    {item.company} - {item.jobTitle || item.role}, {item.location}
                   </p>
                 </div>
-                <p className="text-gray-700 text-[10px]">
+                <p className="date-range">
                   {formatDate(item.startDate)} - {formatDate(item.endDate)}
                 </p>
               </div>
-              <ul className="list-disc list-inside ml-4 mt-1 text-gray-800 leading-tight">
+              <ul>
                 {Array.isArray(item.description)
-                  ? item.description.map((point, i) => (
-                      <li key={i} className="text-[10px]">{point}</li>
-                    ))
+                  ? item.description.map((point, i) => <li key={i}>{point}</li>)
                   : (item.description || "")
                       .split("\n")
                       .filter(Boolean)
                       .map((point, i) => (
-                        <li key={i} className="text-[10px]">{point.replace(/^\s*•\s*/, "").trim()}</li>
+                        <li key={i}>{point.replace(/^\s*•\s*/, "").trim()}</li>
                       ))}
               </ul>
             </div>
@@ -199,28 +162,23 @@ const Google = forwardRef(({ data = {} }, ref) => {
         </section>
       )}
 
-
-
-
       {/* Projects */}
       {projects.length > 0 && (
-        <section className="section-t2 mt-3">
-          <h2 className="section-title-t2 font-semibold border-b text-[13px]">
-            PROJECTS
-          </h2>
+        <section className="section-t2">
+          <h2 className="section-title-t2">PROJECTS</h2>
           {projects.map((proj, idx) => (
-            <div key={idx} className="item-t2 mt-1">
-              <div className="flex justify-between items-baseline">
+            <div key={idx} className="item-t2">
+              <div className="item-header">
                 <div>
-                  <p className="font-semibold text-[11px] info-project">
+                  <p className="info-project">
                     {proj.title} - {proj.tech}
                   </p>
                 </div>
-                <p className="text-gray-700 text-[10px]">
+                <p className="date-range">
                   {formatDate(proj.startDate)} - {formatDate(proj.endDate)}
                 </p>
               </div>
-              <ul className="list-disc list-inside ml-4 mt-1 leading-tight">
+              <ul>
                 {(Array.isArray(proj.description)
                   ? proj.description
                   : (proj.description || "")
@@ -229,9 +187,7 @@ const Google = forwardRef(({ data = {} }, ref) => {
                       .map((point) => point.replace(/^[-•]\s*/, ""))
                       .filter(Boolean)
                 ).map((point, i) => (
-                  <li key={i} className="break-words text-wrap leading-tight text-[10px]">
-                    {point}
-                  </li>
+                  <li key={i}>{point}</li>
                 ))}
               </ul>
             </div>
@@ -239,20 +195,17 @@ const Google = forwardRef(({ data = {} }, ref) => {
         </section>
       )}
 
-
-      {/* Other sections */}
+      {/* Achievements */}
       {achievements.length > 0 && (
-        <section className="section-t2 mt-3">
-          <h2 className="section-title-t2 font-semibold border-b text-[13px]">
-            ACHIEVEMENTS
-          </h2>
+        <section className="section-t2">
+          <h2 className="section-title-t2">ACHIEVEMENTS</h2>
           {achievements.map((ach, idx) => (
-            <div key={idx} className="item-t2 mt-1 text-[11px]">
-              <div className="flex justify-between items-baseline">
-                <p className="font-semibold">{ach.title}</p>
-                <p className="text-gray-700">{formatDate(ach.Date)}</p>
+            <div key={idx} className="item-t2">
+              <div className="item-header">
+                <p>{ach.title}</p>
+                <p className="date-range">{formatDate(ach.Date)}</p>
               </div>
-              <ul className="list-disc list-inside ml-4 mt-1 leading-tight">
+              <ul>
                 {Array.isArray(ach.description)
                   ? ach.description.map((point, i) => <li key={i}>{point}</li>)
                   : (ach.description || "")
@@ -265,47 +218,42 @@ const Google = forwardRef(({ data = {} }, ref) => {
         </section>
       )}
 
+      {/* Certifications */}
       {certifications.length > 0 && (
-        <section className="section-t2 mt-3">
-          <h2 className="section-title-t2 font-semibold border-b text-[13px]">
-            CERTIFICATIONS
-          </h2>
+        <section className="section-t2">
+          <h2 className="section-title-t2">CERTIFICATIONS</h2>
           {certifications.map((cert, idx) => (
-            <div key={idx} className="item-t2 mt-1 text-[11px]">
-              <div className="flex justify-between items-baseline">
-                <p className="font-semibold">
+            <div key={idx} className="item-t2">
+              <div className="item-header">
+                <p>
                   {cert.name} - {cert.issuer}
                 </p>
-                <p className="text-gray-700">{formatDate(cert.Date)}</p>
+                <p className="date-range">{formatDate(cert.Date)}</p>
               </div>
             </div>
           ))}
         </section>
       )}
 
-
-       {languages.length > 0 && (
-        <section className="section-t2 mt-3">
-          <h2 className="section-title-t2 font-semibold border-b text-[13px]">
-            LANGUAGES
-          </h2>
-          <ul className="list-disc list-inside ml-4 mt-1 space-y-0.5">
+      {/* Languages */}
+      {languages.length > 0 && (
+        <section className="section-t2">
+          <h2 className="section-title-t2">LANGUAGES</h2>
+          <ul>
             {languages.map((lang, idx) => (
-              <li key={idx} className="text-[10px] info-language">{lang}</li>
+              <li key={idx} className="info-language">{lang}</li>
             ))}
           </ul>
         </section>
       )}
 
-
-          {interests.length > 0 && (
-        <section className="section-t2 mt-3">
-          <h2 className="section-title-t2 font-semibold border-b text-[13px]">
-            INTERESTS
-          </h2>
-          <ul className="list-disc list-inside ml-4 mt-1 text-[11px] space-y-0.5 info-interest">
+      {/* Interests */}
+      {interests.length > 0 && (
+        <section className="section-t2">
+          <h2 className="section-title-t2">INTERESTS</h2>
+          <ul className="info-interest">
             {interests.map((interest, idx) => (
-              <li key={idx} >{interest}</li>
+              <li key={idx}>{interest}</li>
             ))}
           </ul>
         </section>

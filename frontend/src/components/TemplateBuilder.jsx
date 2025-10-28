@@ -21,6 +21,7 @@ import useResumeStore from "../store/useResumeStore";
 import Template4 from "./templates/Template4";
 import Template5 from "./templates/Template5";
 import Template6 from "./templates/Template6";
+import Template7 from "./templates/Template7";
 
 export default function TemplateBuilder({
   selectedTemplate,
@@ -40,7 +41,7 @@ export default function TemplateBuilder({
     dataToBuild,
     reset,
   } = useResumeStore();
-  
+
   // Refs for preview and scrolling
   const previewRef = useRef();
   const topRef = useRef();
@@ -133,19 +134,54 @@ export default function TemplateBuilder({
         achievements: data.achievements || [],
         internships: data.internships || [],
         certifications: data.certifications || [],
-        newExperience: data.newExperience || { jobTitle: "", company: "", startDate: "", endDate: "", description: "" },
-        newEducation: data.newEducation || { degree: "", school: "", startDate: "", endDate: "" },
-        newProject: data.newProject || { title: "", startDate: "", endDate: "", tech: "", description: "" },
+        newExperience: data.newExperience || {
+          jobTitle: "",
+          company: "",
+          startDate: "",
+          endDate: "",
+          description: "",
+        },
+        newEducation: data.newEducation || {
+          degree: "",
+          school: "",
+          startDate: "",
+          endDate: "",
+        },
+        newProject: data.newProject || {
+          title: "",
+          startDate: "",
+          endDate: "",
+          tech: "",
+          description: "",
+        },
         newAchievement: data.newAchievement || { title: "", description: "" },
-        newInternship: data.newInternship || { role: "", company: "", startDate: "", endDate: "", description: "" },
-        newCertification: data.newCertification || { name: "", issuer: "", date: "" },
+        newInternship: data.newInternship || {
+          role: "",
+          company: "",
+          startDate: "",
+          endDate: "",
+          description: "",
+        },
+        newCertification: data.newCertification || {
+          name: "",
+          issuer: "",
+          date: "",
+        },
       });
       setTitle(data.Name ? `${data.Name}'s Resume` : "Untitled Resume");
       if (state.resumeId || resumeId) {
         setResumeId(state.resumeId || resumeId);
       }
     }
-  }, [location.state, resumeData, resumeId, setManualForm, setResumeId, reset, dataToBuild]);
+  }, [
+    location.state,
+    resumeData,
+    resumeId,
+    setManualForm,
+    setResumeId,
+    reset,
+    dataToBuild,
+  ]);
 
   // Debug manualForm changes
   useEffect(() => {
@@ -382,57 +418,58 @@ export default function TemplateBuilder({
       case "microsoft":
         return <Microsoft {...props} ref={previewRef} />;
       case "template4":
-        return <Template4 {...props} ref={previewRef}/>
+        return <Template4 {...props} ref={previewRef} />;
 
       case "template5":
-        return <Template5 {...props} ref={previewRef}/>
+        return <Template5 {...props} ref={previewRef} />;
       case "template6":
-        return <Template6 {...props} ref={previewRef}/>
+        return <Template6 {...props} ref={previewRef} />;
+      case "template7":
+        return <Template7 {...props} ref={previewRef} />;
       default:
         return <Microsoft {...props} ref={previewRef} />;
     }
   };
 
   // Mobile view toggle with template selection button
-const MobileViewToggle = () => (
-  <div className="lg:hidden  flex justify-between items-center mb-4 bg-white p-2 rounded-lg shadow-sm">
-    <button
-      onClick={() => setIsMobileSidebarOpen(true)}
-      className="flex items-center gap-2 px-3 py-4 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
-    >
-      <Menu size={16} />
-      Templates
-    </button>
-    
-    <div className="flex border border-blue-200 rounded-md overflow-hidden">
+  const MobileViewToggle = () => (
+    <div className="lg:hidden  flex justify-between items-center mb-4 bg-white p-2 rounded-lg shadow-sm">
       <button
-        className={`px-4 py-2 text-sm font-medium ${
-          activeView === "form" 
-            ? "bg-blue-600 text-white" 
-            : "bg-white text-gray-700 hover:bg-gray-50"
-        }`}
-        onClick={() => setActiveView("form")}
+        onClick={() => setIsMobileSidebarOpen(true)}
+        className="flex items-center gap-2 px-3 py-4 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
       >
-        Edit Resume
+        <Menu size={16} />
+        Templates
       </button>
-      <button
-        className={`px-4 py-2 text-sm font-medium ${
-          activeView === "preview" 
-            ? "bg-blue-600 text-white" 
-            : "bg-white text-gray-700 hover:bg-gray-50"
-        }`}
-        onClick={() => setActiveView("preview")}
-      >
-        Preview
-      </button>
+
+      <div className="flex border border-blue-200 rounded-md overflow-hidden">
+        <button
+          className={`px-4 py-2 text-sm font-medium ${
+            activeView === "form"
+              ? "bg-blue-600 text-white"
+              : "bg-white text-gray-700 hover:bg-gray-50"
+          }`}
+          onClick={() => setActiveView("form")}
+        >
+          Edit Resume
+        </button>
+        <button
+          className={`px-4 py-2 text-sm font-medium ${
+            activeView === "preview"
+              ? "bg-blue-600 text-white"
+              : "bg-white text-gray-700 hover:bg-gray-50"
+          }`}
+          onClick={() => setActiveView("preview")}
+        >
+          Preview
+        </button>
+      </div>
     </div>
-  </div>
-);
-  
+  );
+
   return (
     <div className="flex flex-col min-h-screen bg-gray-50" ref={topRef}>
       {/* Mobile Header */}
-    
 
       {/* Step Indicator - Mobile Version */}
       <div className="sticky top-0 z-40 bg-white shadow-md py-3 px-2 border-b border-gray-200 lg:top-0">
@@ -467,10 +504,10 @@ const MobileViewToggle = () => (
                         ? "bg-green-500"
                         : "bg-gray-300"
                     }`}
-                    style={{ 
-                      width: "calc(100% - 2rem)", 
+                    style={{
+                      width: "calc(100% - 2rem)",
                       transform: "translateY(-50%)",
-                      maxWidth: "80px"
+                      maxWidth: "80px",
                     }}
                   />
                 )}
@@ -534,7 +571,7 @@ const MobileViewToggle = () => (
               animate={{ x: 0 }}
               exit={{ x: -300 }}
               transition={{ type: "tween", ease: "easeInOut" }}
-              className="fixed left-0 top-0 h-full w-72 bg-white shadow-xl z-50 lg:hidden"
+              className="fixed left-0 top-0 h-full w-65 bg-white shadow-xl z-50 lg:hidden"
             >
               <div className="p-4 border-b border-gray-200 flex items-center justify-between">
                 <h2 className="text-lg font-semibold">Templates</h2>
@@ -545,8 +582,10 @@ const MobileViewToggle = () => (
                   <X size={20} />
                 </button>
               </div>
-              <div className="p-4 overflow-y-auto h-full">
-                <TemplateSelection onSelect={() => setIsMobileSidebarOpen(false)} />
+              <div className="p-4  h-full">
+                <TemplateSelection
+                  onSelect={() => setIsMobileSidebarOpen(false)}
+                />
               </div>
             </motion.div>
           </>
@@ -559,13 +598,17 @@ const MobileViewToggle = () => (
         <div className="hidden lg:block w-55 min-w-[240px] border-r border-blue-100 bg-white shadow-md sticky top-0 h-screen">
           <TemplateSelection />
         </div>
-        
+
         <div className="flex  flex-col lg:flex-row gap-4  w-full mx-auto">
           {/* Mobile View Toggle */}
           <MobileViewToggle />
-          
+
           {/* Form Section - Hidden on mobile when preview is active */}
-          <section className={`w-full lg:w-1/2 bg-white rounded-lg shadow-md transition-all ${activeView === "preview" ? "hidden lg:block" : "block"}`}>
+          <section
+            className={`w-full lg:w-1/2 bg-white rounded-lg shadow-md transition-all ${
+              activeView === "preview" ? "hidden lg:block" : "block"
+            }`}
+          >
             {loading ? (
               <div className="flex flex-col items-center justify-center py-16 text-blue-600">
                 <div className="w-10 h-10 border-4 border-blue-300 border-t-transparent rounded-full animate-spin mb-4"></div>
@@ -575,9 +618,13 @@ const MobileViewToggle = () => (
               <ResumeForm />
             )}
           </section>
-          
+
           {/* Preview Section - Hidden on mobile when form is active */}
-          <section className={`w-full lg:w-1/2 bg-white rounded-lg p-4 lg:sticky lg:top-4 ${activeView === "form" ? "hidden lg:block" : "block"}`}>
+          <section
+            className={`w-full lg:w-1/2 bg-white rounded-lg p-4 lg:sticky lg:top-4 ${
+              activeView === "form" ? "hidden lg:block" : "block"
+            }`}
+          >
             <div className="sticky top-0 bg-white pb-3 z-10 flex flex-col gap-2 border-0 border-gray-200 mb-4">
               <div className="flex items-center gap-2 flex-1 flex-wrap">
                 <button
@@ -653,22 +700,28 @@ const MobileViewToggle = () => (
                   )}
                 </button>
               </div>
-              
+
               {/* Save Status Indicator */}
               {saveStatus !== "idle" && (
-                <div className={`text-xs mt-1 px-2 py-1 rounded ${
-                  saveStatus === "saving" ? "bg-blue-100 text-blue-800" :
-                  saveStatus === "saved" ? "bg-green-100 text-green-800" :
-                  "bg-red-100 text-red-800"
-                }`}>
+                <div
+                  className={`text-xs mt-1 px-2 py-1 rounded ${
+                    saveStatus === "saving"
+                      ? "bg-blue-100 text-blue-800"
+                      : saveStatus === "saved"
+                      ? "bg-green-100 text-green-800"
+                      : "bg-red-100 text-red-800"
+                  }`}
+                >
                   {saveStatus === "saving" && "Saving..."}
                   {saveStatus === "saved" && "Resume saved successfully!"}
-                  {saveStatus === "error" && "Error saving resume. Please try again."}
+                  {saveStatus === "error" &&
+                    "Error saving resume. Please try again."}
                 </div>
               )}
             </div>
-            
-            <div className="max-h-[calc(100vh-180px)] fixed overflow-y-auto p-4 bg-gray-50 rounded-lg">
+
+            {/* Scrollable preview area - now flex-grow for proper height */}
+            <div className="flex-1 fixed overflow-y-auto p-4 bg-gray-50 rounded-lg max-h-[calc(100vh-200px)]">
               {renderPreview()}
             </div>
           </section>

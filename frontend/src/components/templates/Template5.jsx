@@ -31,8 +31,7 @@ const Template5 = forwardRef(({ data={} }, ref) => {
       <div className="resume-inner">
       <header className="resume-header">
         <h1>{Name}</h1>
-        <h2>{jobTitle}</h2>
-        <p className="contact-info">
+        <p className="template5-contact-info">
           {phone} • {email} • <a href={linkedin}>{linkedin}</a>
         </p>
       </header>
@@ -196,8 +195,8 @@ const Template5 = forwardRef(({ data={} }, ref) => {
       )}
 
 {languages?.length > 0 && (
-<div className="">
-  <h2 className="section-title-centered">Languages</h2>
+<section className="language-section">
+  <h3 className="section-title-centered">LANGUAGES</h3>
   <div className="language-list">
     {languages.map((lang, index) => (
       <div className="language-item" key={index}>
@@ -205,13 +204,13 @@ const Template5 = forwardRef(({ data={} }, ref) => {
       </div>
     ))}
   </div>
-</div>
+</section>
 )}
 
 
 {interests?.length > 0 && (
-  <div className="interest-section">
-    <h3 className="section-title-centered">Interests</h3>
+  <section className="interest-section">
+    <h3 className="section-title-centered">INTERESTS</h3>
     <div className="interest-list">
       {interests.map((text, index) => (
         <div key={index} className="interest-item">
@@ -219,13 +218,13 @@ const Template5 = forwardRef(({ data={} }, ref) => {
         </div>
       ))}
     </div>
-  </div>
+  </section>
 )}
 
 
 {certifications?.length>0 && (
-   <div className="certification-section">
-    <h3 className="section-title-centered">Certifications</h3>
+   <section className="certification-section">
+    <h3 className="section-title-centered">CERTIFICATIONS</h3>
     <div className="certification-list">
       {certifications.map((cert, index) => (
         <div key={index} className="certification-item">
@@ -233,7 +232,7 @@ const Template5 = forwardRef(({ data={} }, ref) => {
         </div>
       ))}
     </div>
-  </div>
+  </section>
 )}
 
   </div>      

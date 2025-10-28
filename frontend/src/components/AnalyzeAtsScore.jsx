@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft, ChevronRight, Home, Info } from "lucide-react";
 import useResumeStore from "../store/useResumeStore";
@@ -249,6 +249,11 @@ const AnalyzeAtsScore = () => {
     URL.revokeObjectURL(url);
   };
 
+  useEffect(() => {
+    setIsLoading(false);
+    setError(null);
+  }, []);
+
   const handleNavigateToBuilder = async () => {
     if (!optimizedResumeFile) {
       setError(
@@ -280,6 +285,7 @@ const AnalyzeAtsScore = () => {
       }
 
       setDataToBuild(data);
+      setIsLoading(false);
       navigate("/builder/google");
     } catch (err) {
       setError(err.message);

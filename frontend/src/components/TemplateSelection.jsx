@@ -6,6 +6,7 @@ import useResumeStore from "../store/useResumeStore"; // Import useResumeStore t
 import Template4 from "./templates/Template4";
 import Template5 from "./templates/Template5";
 import Template6 from "./templates/Template6"
+import Template7 from "./templates/Template7";
 
 // Dummy data for template previews
 const dummyData = {
@@ -132,20 +133,26 @@ const templates = [
   },
   {
       id: "template4",
-    name: "simple",
+    name: "Simple",
     description: "non-ats",
     PreviewComponent: Template4,
   },
   {
     id: "template5",
-    name:"management",
+    name:"Management",
     description:"",
     PreviewComponent: Template5,
   },{
     id: "template6",
-    name: "marketing manager",
+    name: "Marketing manager",
     description:"marketing manager ",
     PreviewComponent: Template6,
+  },
+  {
+    id: "template7",
+    name:"Software engineer",
+    description:"Technical",
+    PreviewComponent: Template7,
   }
 ];
 
@@ -182,7 +189,7 @@ export default function TemplateSelection() {
               <div
                 key={id}
                 onClick={() => handleSelect(id)}
-                className={`bg-white rounded-xl p-3 cursor-pointer transition-all duration-200 group
+                className={`bg-white rounded-xl p-3 my-5 cursor-pointer transition-all duration-200 group
                   ${isActive 
                     ? "border-2 border-blue-500 shadow-lg scale-[1.02]" // Highlight style
                     : "border border-blue-100 shadow-sm hover:shadow-lg hover:scale-[1.01]"

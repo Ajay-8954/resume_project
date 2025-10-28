@@ -23,6 +23,11 @@ const Login = () => {
         { email, password },
         { withCredentials: true }
       );
+
+      console.log('Login response:', response.data);
+      console.log('User organisation data:', response.data.user);
+
+      
       setAuth(true, response.data.user);
       navigate('/dashboard');
     } catch (err) {

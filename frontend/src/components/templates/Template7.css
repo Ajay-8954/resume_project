@@ -1,0 +1,320 @@
+/* Template7 Resume Styles */
+.template7-container {
+    min-height: 297mm;
+    background-color: #f9fafb;
+    width: 170mm;
+    padding: 32px 0;
+}
+
+.template7-resume {
+    margin: 0 auto;
+    background-color: white;
+}
+
+/* Header Section */
+.template7-header {
+    padding: 32px;
+    padding-bottom: 10px;
+}
+
+.template7-name {
+    font-size: 27px;
+    font-weight: bold;
+    color: #2563eb;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+}
+
+.template7-job-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 12px;
+}
+
+.template7-contact {
+    color: #6b7280;
+    font-size: 13px;
+}
+
+/* Section Styles */
+.template7-section {
+    padding: 0 32px 15px 32px;
+}
+
+.template7-section-title {
+    font-size: 13px;
+    font-weight: bold;
+    color: #2563eb;
+    margin-bottom: 10px;
+    border-bottom: 2px solid #e5e7eb;
+    padding-bottom: 4px;
+}
+
+.template7-section-content {
+    color: #374151;
+    line-height: 1.625;
+    font-size: 12px;
+}
+
+/* Education Styles - FIXED FOR PDF */
+.template7-education-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16px;
+    width: 100%;
+    page-break-inside: auto;
+}
+
+.template7-education-details {
+    flex: 1;
+    min-width: 0;
+}
+
+.template7-education-details h4 {
+    font-weight: 600;
+    color: #1f2937;
+    font-size: 13px;
+    margin: 0 0 4px 0;
+    text-transform: capitalize;
+}
+
+.template7-education-details p {
+    color: #6b7280;
+    font-size: 12px;
+    margin: 2px 0;
+    text-transform: capitalize;
+}
+
+.template7-education-year {
+    color: #1f2937;
+    font-weight: 500;
+    font-size: 12px;
+    white-space: nowrap;
+    margin-left: 16px;
+    text-align: right;
+    min-width: 120px; /* Ensure enough space for dates */
+}
+
+/* Skills Grid */
+.template7-skills-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 3px;
+}
+
+.template7-skill-item {
+    text-align: center;
+    font-size: 11px;
+}
+
+.template7-skill-item span {
+    color: #374151;
+    font-weight: 500;
+}
+
+/* Experience/Internship Styles */
+.template7-experience-item {
+    margin-bottom: 24px;
+    page-break-inside: auto;
+}
+
+.template7-experience-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+}
+
+.template7-experience-details {
+    flex: 1;
+    min-width: 0;
+}
+
+.template7-experience-details h4 {
+    font-weight: 600;
+    color: #1f2937;
+    font-size: 13px;
+    margin: 0 0 4px 0;
+    text-transform: capitalize;
+}
+
+.template7-experience-details p {
+    color: #6b7280;
+    font-size: 12px;
+    margin: 0;
+    text-transform: capitalize;
+}
+
+.template7-experience-duration {
+    color: #1f2937;
+    font-weight: 500;
+    font-size: 12px;
+    white-space: nowrap;
+    margin-left: 16px;
+    text-align: right;
+    min-width: 120px;
+}
+
+.template7-description-list {
+    list-style-type: disc;
+    list-style-position: outside;
+    color: #374151;
+    font-size: 12px;
+    line-height: 1.5;
+    padding-left: 16px;
+    margin: 8px 0 0 0;
+}
+
+.template7-description-list li {
+    margin-bottom: 4px;
+}
+
+/* Projects Styles */
+.template7-project-item {
+    margin-bottom: 20px;
+    page-break-inside: auto;
+}
+
+.template7-project-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+}
+
+.template7-project-title-container {
+    flex: 1;
+    min-width: 0;
+}
+
+.template7-project-title {
+    font-weight: bold;
+    color: #1f2937;
+    font-size: 13px;
+    margin: 0 0 4px 0;
+}
+
+.template7-project-duration {
+    color: #374151;
+    font-weight: 500;
+    font-size: 12px;
+    white-space: nowrap;
+    margin-left: 16px;
+    text-align: right;
+    min-width: 120px;
+}
+
+.template7-project-technologies {
+    margin-top: 8px;
+}
+
+.template7-project-technologies span {
+    color: #6b7280;
+    font-size: 12px;
+}
+
+/* Certifications Styles */
+.template7-certification-item {
+    margin-bottom: 16px;
+    page-break-inside: auto;
+}
+
+.template7-certification-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.template7-certification-details {
+    flex: 1;
+    min-width: 0;
+}
+
+.template7-certification-details h4 {
+    font-weight: 600;
+    color: #1f2937;
+    font-size: 12px;
+    margin: 0 0 4px 0;
+}
+
+.template7-certification-details p {
+    color: #6b7280;
+    font-size: 12px;
+    margin: 0;
+    text-transform: capitalize;
+}
+
+.template7-certification-date {
+    color: #1f2937;
+    font-weight: 500;
+    font-size: 12px;
+    white-space: nowrap;
+    margin-left: 16px;
+    text-align: right;
+    min-width: 120px;
+}
+
+/* Languages Grid */
+.template7-languages-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 5px;
+}
+
+.template7-language-item {
+    text-align: center;
+    font-size: 12px;
+}
+
+.template7-language-item span {
+    color: #374151;
+    font-weight: 500;
+}
+
+/* Interests */
+.template7-interests {
+    color: #374151;
+    line-height: 1.5;
+    font-size: 12px;
+}
+
+/* Achievements Styles */
+.template7-achievements-section {
+    padding: 0 32px 32px 32px;
+}
+
+.template7-achievements-content {
+    margin-top: 16px;
+}
+
+.template7-achievement-item {
+    margin-bottom: 16px;
+    page-break-inside: auto;
+}
+
+.template7-achievement-title {
+    font-weight: bold;
+    color: #1f2937;
+    margin-bottom: 8px;
+    font-size: 13px;
+}
+
+.template7-achievement-description {
+    color: #374151;
+    line-height: 1.5;
+    font-size: 12px;
+}
+
+/* PDF Specific Fixes */
+@page {
+    size: A4;
+    margin: 4mm;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    background: white;
+}

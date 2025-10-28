@@ -10,7 +10,15 @@ import Footer from "./components/Footer";
 import Dashboard from "./components/Dashboard";
 import Signup from "./components/Signup";
 import Login from "./components/Login";
+
+import AdminLayout from "./components/admin/AdminLayout";
+import AdminDashboard from "./components/admin/AdminDashboard";
+import OrganisationsList from "./components/admin/OrganisationsList";
+import CreateOrganisation from "./components/admin/CreateOrganisation";
+
 import ProtectedRoute from "./components/ProtectedRoute";
+import ResumeFilterWrapper from "./components/ResumeFilter/ResumeFilterWrapper";
+
 
 function App() {
   return (
@@ -29,6 +37,8 @@ function App() {
             <Route element={<ProtectedRoute />}>
               <Route path="/dashboard" element={<Dashboard />} />
               {/* Add other protected routes here */}
+              {/* NEW: Add Filter Resumes route */}
+              <Route path="/filter-resumes/*" element={<ResumeFilterWrapper/>} />
             </Route>
 
             <Route element={<ProtectedRoute />}>
@@ -39,8 +49,21 @@ function App() {
             </Route>
 
             <Route element={<ProtectedRoute />}>
-            <Route path="/analyze" element={<AnalyzeAtsScore />} />
+              <Route path="/analyze" element={<AnalyzeAtsScore />} />
             </Route>
+
+
+            {/* Admin routes */}
+            <Route path="/admin" element={<AdminLayout/>}>
+              <Route index element={<AdminDashboard />} />
+              <Route path="organisations" element={<OrganisationsList />} />
+              <Route
+                path="organisations/new"
+                element={<CreateOrganisation />}
+              />
+              {/* Add more admin routes here */}
+            </Route>
+
           </Routes>
         </div>
 

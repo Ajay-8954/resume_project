@@ -4,6 +4,186 @@
   min-height: 297mm;
 }
 
+.meta-name {
+  font-size: 24px;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.meta-contact,
+.meta-links {
+  font-size: 10px;
+  text-align: center;
+}
+
+/* new added */
+.info-location{
+    text-transform: capitalize;
+}
+
+
+.info-capital{
+  text-transform: capitalize;
+}
+
+.info-skill{
+  text-transform : capitalize;
+}
+
+.info-language{
+  text-transform : capitalize;
+}
+
+.info-interest{
+  text-transform: capitalize;
+}
+
+.info-project{
+  text-transform: capitalize;
+}
+
+.info-internship{
+  text-transform: capitalize;
+}
+
+.meta-section {
+  margin-top: 15px;
+  margin-bottom: 15px;
+}
+
+.meta-section-heading {
+  font-size: 13px;
+  text-align: center;
+  font-weight: bold;
+}
+
+.meta-list {
+  font-size: 11px;
+  text-align: justify;
+}
+
+.meta-item {
+  font-size: 11px;
+  margin-bottom: 10px;
+}
+
+.meta-text {
+  font-size: 11px;
+  text-align: justify;
+}
+
+.meta-bullets {
+  font-size: 11px;
+  text-align: justify;
+  padding-left: 20px;
+    list-style-type: disc; /* ✅ Add this */
+}
+
+.meta-dates {
+  font-weight: bold;
+}
+
+.meta-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Print/PDF-specific styles for better page breaks */
+/* Print/PDF-specific styles for better page breaks */
+/* Print/PDF-specific styles for better page breaks */
+@media print {
+  @page {
+    margin: 7mm; /* Adds uniform 10mm margins around the page edges, including top space */
+    size: A4; /* Explicitly sets A4 size to match your width/height */
+  }
+
+  .meta-container {
+    font-family: Arial, sans-serif;
+    width: 170mm;
+    min-height: 297mm;
+    box-sizing: border-box;
+    margin: 0; /* Ensures no extra container margins override @page */
+  }
+
+  .resume-inner {
+    padding: 10mm;  /* reliable in PDF - inner padding for content breathing room */
+    box-sizing: border-box;
+  }
+
+  /* Allow sections to break naturally if content overflows */
+  .meta-section {
+    /* Removed page-break-inside: avoid; to allow breaks within sections */
+    margin-top: 15px;
+    margin-bottom: 15px;
+    orphans: 3; /* Keep at least 3 lines at the bottom of a page */
+    widows: 3;  /* Keep at least 3 lines at the top of a page */
+  }
+
+  /* Allow items to break if needed, but avoid breaking short ones */
+  .meta-item {
+    /* Removed page-break-inside: avoid; for flexible flow */
+    margin-bottom: 10px;
+    orphans: 2;
+    widows: 2;
+  }
+
+  /* Allow lists to break within long bullets */
+  .meta-bullets {
+    /* Removed page-break-inside: avoid; to permit mid-list breaks */
+    padding-left: 20px;
+    list-style-type: disc; /* ✅ Add this */
+    orphans: 2;
+    widows: 2;
+  }
+
+  .meta-bullets li {
+    /* Keep individual bullets from breaking to prevent awkward splits */
+    page-break-inside: avoid;
+    break-inside: avoid;
+    margin-bottom: 2px; /* Small space to allow natural flow */
+  }
+
+  /* Header should not break */
+  .meta-header {
+    page-break-after: avoid;
+    break-after: avoid;
+  }
+
+  /* Encourage breaks after headings (but allow if needed) */
+  .meta-section-heading {
+    page-break-after: auto; /* Allows content to flow after heading */
+    break-after: auto;
+  }
+
+  /* Allow paragraphs to break naturally */
+  .meta-text {
+    /* Removed avoid to let text flow across pages */
+    orphans: 2;
+    widows: 2;
+  }
+
+  /* Flex items (e.g., title + dates) - allow break if row is too long */
+  .meta-flex {
+    page-break-inside: auto; /* Explicitly allow breaks */
+    break-inside: auto;
+  }
+
+  /* Lists and other blocks - natural flow */
+  .meta-list {
+    /* Removed avoid for flexible wrapping */
+    orphans: 2;
+    widows: 2;
+  }
+}
+
+/* Screen styles (non-print) - unchanged for preview */
+.meta-container {
+  font-family: Arial, sans-serif;
+  width: 170mm;
+  min-height: 297mm;
+}
+
 .resume-inner {
   padding: 10mm;  /* reliable in PDF */
   box-sizing: border-box;
@@ -25,7 +205,6 @@
 .info-location{
     text-transform: capitalize;
 }
-
 
 .info-capital{
   text-transform: capitalize;

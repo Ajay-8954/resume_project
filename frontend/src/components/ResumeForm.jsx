@@ -17,8 +17,11 @@ export default function ResumeForm() {
   const reset = useResumeStore((state) => state.reset);
 
   // Default to fresher
+  const [pastedText, setPastedText] = useState('');
+const [textLoading, setTextLoading] = useState(false);
+
   const [uploadLoading, setUploadLoading] = useState(false);
-  const [enhancingField, setEnhancingField] = useState(null); // 'experience', 'project', etc.
+  const [enhancingField, setEnhancingField] = useState({ type: null, index: null });
 
   const [interestSuggestions, setInterestSuggestions] = useState([]);
   const [showInterestSuggestions, setShowInterestSuggestions] = useState(false);
@@ -160,8 +163,8 @@ export default function ResumeForm() {
     }
   };
 
-  const enhanceField = async (fieldType, currentText, context = {}) => {
-    setEnhancingField(fieldType);
+  const enhanceField = async (fieldType, index, currentText, context = {}) => {
+    setEnhancingField({ type: fieldType, index });
     try {
       const response = await fetch("http://localhost:5000/enhance-field", {
         method: "POST",
@@ -174,11 +177,11 @@ export default function ResumeForm() {
       });
       if (!response.ok) throw new Error("Enhancement failed");
       const data = await response.json();
-      setEnhancingField(null);
+      setEnhancingField({ type: null, index: null });
       return data.enhancedText; // Assuming API returns { enhancedText: "..." }
     } catch (error) {
       console.error("Error enhancing field:", error);
-      setEnhancingField(null);
+      setEnhancingField({ type: null, index: null });
       return currentText; // Fallback to original text if error
     }
   };
@@ -240,6 +243,70 @@ export default function ResumeForm() {
       alert(`Error: ${err.message || "Failed to process resume"}`);
     } finally {
       setUploadLoading(false); // Reset loading
+    }
+  };
+
+  const extractFromPastedText = async () => {
+    if (!pastedText.trim()) {
+      alert("Please paste some profile text to extract.");
+      return;
+    }
+    setTextLoading(true);
+    try {
+      const res = await fetch("http://localhost:5000/api/extract-text", {  // Assume this endpoint exists on your backend
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: pastedText }),
+      });
+  
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to extract from text");
+      }
+  
+      const data = await res.json();
+      console.log("Data received from backend:", data);
+  
+      // Transform the data to match your form structure
+      const transformedData = {
+        Name: data.Name || "",
+        jobTitle: data.jobTitle || "",
+        email: data.email || "",
+        phone: data.phone || "",
+        location: data.location || "",
+        linkedin: data.linkedin || "",
+        github: data.github || "",
+        objective: data.objective || "",
+        summary: data.summary || "",
+        experience: data.experience || [],
+        education: data.education || [],  // Assuming education has no description array
+        projects: data.projects || [],
+        skills: data.skills || [],
+        languages: data.languages || [],
+        interests: data.interests || [],
+        achievements: data.achievements || [],
+        internships: data.internships || [],
+        certifications: data.certifications || [],
+      };
+  
+      // Update the form state
+      setManualForm(transformedData);
+      console.log("Updated manualForm:", transformedData);
+  
+      // Auto-toggle based on experience (same as upload)
+      if (transformedData.experience && transformedData.experience.length > 0) {
+        setToggle("experienced");
+      } else {
+        setToggle("fresher");
+      }
+  
+      // Clear the pasted text after success
+      setPastedText('');
+    } catch (err) {
+      console.error("Text extraction error:", err);
+      alert(`Error: ${err.message || "Failed to process pasted text"}`);
+    } finally {
+      setTextLoading(false);
     }
   };
 
@@ -859,6 +926,39 @@ export default function ResumeForm() {
 
       {/* Upload Box */}
       <div className="space-y-4">
+
+        {/* Pasted Text Extraction */}
+<div className="border-t border-gray-300 my-4"></div>
+<h3 class="text-2xl font-extrabold text-indigo-600 tracking-wider mb-2 
+ border-amber-400 inline-block px-2 pb-1 hover:text-indigo-800 hover:border-amber-500 transition duration-300">
+    🔗 PASTE LinkedIn PROFILE TEXT HERE ⚡️
+</h3>
+<textarea
+  rows={4}
+  className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-300 outline-none"
+  placeholder="Paste the person's profile data here (e.g., from LinkedIn, a bio, or resume text)..."
+  value={pastedText}
+  onChange={(e) => setPastedText(e.target.value)}
+  disabled={textLoading}
+/>
+<button
+  className={` bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition text-sm flex items-center justify-center gap-2 ${textLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+  onClick={extractFromPastedText}
+  disabled={textLoading}
+>
+  {textLoading ? (
+    <>
+      <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+      </svg>
+      Extracting...
+    </>
+  ) : (
+    'Extract and Fill Form'
+  )}
+</button>
+
         {/* <h3 className="text-lg font-semibold text-gray-700">Upload Resume</h3> */}
         <div
           className={`flex items-center justify-center border border-dashed border-blue-400 rounded-md p-4 text-blue-600 bg-blue-50 hover:bg-blue-100 transition cursor-pointer ${
@@ -1251,15 +1351,16 @@ export default function ResumeForm() {
                     onClick={async () => {
                       const enhanced = await enhanceField(
                         "experience",
+                        index,
                         exp.description || "",
                         { role: exp.role, company: exp.company }
                       );
                       handleExperienceChange(index, "description", enhanced);
                     }}
                     className="bg-blue-100 text-blue-600 px-2 py-1 rounded text-sm hover:bg-blue-200 flex items-center gap-1"
-                    disabled={enhancingField === "experience"}
+                    disabled={enhancingField.type === "experience" && enhancingField.index === index}
                   >
-                    {enhancingField === "experience" ? (
+                    {enhancingField.type === "experience" && enhancingField.index === index  ? (
                       <>
                         <svg
                           className="animate-spin h-4 w-4"
@@ -2073,15 +2174,16 @@ export default function ResumeForm() {
                   onClick={async () => {
                     const enhanced = await enhanceField(
                       "project",
+                      index,
                       project.description || "",
                       { title: project.title, tech: project.tech || "" } // Include tech for context, even if commented out
                     );
                     handleProjectChange(index, "description", enhanced);
                   }}
                   className="bg-blue-100 text-blue-600 px-2 py-1 rounded text-sm hover:bg-blue-200 flex items-center gap-1"
-                  disabled={enhancingField === "project"}
+                  disabled={enhancingField.type === "project" && enhancingField.index === index}
                 >
-                  {enhancingField === "project" ? (
+                  {enhancingField.type === "project" && enhancingField.index === index ? (
                     <>
                       <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
                         <circle
@@ -2362,15 +2464,16 @@ export default function ResumeForm() {
                     onClick={async () => {
                       const enhanced = await enhanceField(
                         "internship",
+                        index,
                         internship.description || "",
                         { role: internship.role, company: internship.company }
                       );
                       handleInternshipChange(index, "description", enhanced);
                     }}
                     className="bg-blue-100 text-blue-600 px-2 py-1 rounded text-sm hover:bg-blue-200 flex items-center gap-1"
-                    disabled={enhancingField === "internship"}
+                    disabled={enhancingField.type === "internship" && enhancingField.index === index}
                   >
-                    {enhancingField === "internship" ? (
+                    {enhancingField.type === "internship" && enhancingField.index === index  ? (
                       <>
                         <svg
                           className="animate-spin h-4 w-4"
@@ -2589,15 +2692,16 @@ export default function ResumeForm() {
                     onClick={async () => {
                       const enhanced = await enhanceField(
                         "achievements",
+                        index,
                         ach.description || "",
                         { title: ach.title }
                       );
                       handleAchievementChange(index, "description", enhanced);
                     }}
                     className="bg-blue-100 text-blue-600 px-2 py-1 rounded text-sm hover:bg-blue-200 flex items-center gap-1"
-                    disabled={enhancingField === "achievements"}
+                    disabled={enhancingField.type === "achievements" && enhancingField.index === index}
                   >
-                    {enhancingField === "achievements" ? (
+                    {enhancingField.type === "achievements" && enhancingField.index === index ? (
                       <>
                         <svg
                           className="animate-spin h-4 w-4"

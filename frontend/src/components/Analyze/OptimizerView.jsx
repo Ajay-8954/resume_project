@@ -27,15 +27,16 @@ const OptimizerView = ({
 
     {/* Right Section (Full width on mobile, shifted on desktop) */}
     <div className="flex-1 flex flex-col overflow-hidden w-full md:ml-0 md:w-3/5 lg:w-2/3">
-      <header className="shrink-0 text-center space-y-2 bg-slate-50 text-black py-4 px-6 border-b border-gray-700">
-        <h2 className="text-2xl font-extrabold text-black tracking-tight">
+      <header className="shrink-0 text-center space-y-2 bg-slate-50 text-black py-4 px-6  border-gray-700">
+        <p className="text-xl font-extrabold text-white bg-black tracking-tight">
           <Sparkles className="inline-block w-6 h-6 text-purple-400 mr-2 animate-pulse" />
-          Resume Optimizer
-        </h2>
-        <p className="text-black text-sm max-w-lg mx-auto">
+          {/* Resume Optimizer */}
+          Answer a few focused questions to enhance your resume.
+        </p>
+        {/* <p className="text-black text-sm max-w-lg mx-auto">
           Answer a few focused questions to transform your experience into
           strong, results-driven resume points.
-        </p>
+        </p> */}
       </header>
 
       <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50">

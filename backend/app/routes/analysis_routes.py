@@ -537,3 +537,175 @@ Resume Text:
         return jsonify({"error": f"Connection error: {str(e)}"}), 500
     except Exception as e:
         return jsonify({"error": f"Failed to generate questions: {str(e)}"}), 500
+
+@analysis_bp.route("/extract-text", methods=["POST"])
+def extract_text_route():
+    """Extract structured resume data from pasted text"""
+    data = request.get_json()
+    pasted_text = data.get('text')
+    
+    if not pasted_text:
+        return jsonify({"error": "Pasted text is required."}), 400
+
+    json_structure = """{
+        "Name": "<string>",
+        "jobTitle": "<string>",
+        "email": "<string>",
+        "phone": "<string>",
+        "location": "<string>",
+        "linkedin": "<string>",
+        "github": "<string>",
+        "summary": "<string>",
+        "objective": "<string>",
+        "experience": [
+            {
+                "jobTitle": "<string>",
+                "company": "<string>",
+                "startDate": "<string>",
+                "endDate": "<string>",
+                "location": "<string>",
+                "description": ["<string>", "<string>"]
+            }
+        ],
+        "internships": [
+            {
+                "role": "<string>",
+                "company": "<string>",
+                "startDate": "<string>",
+                "endDate": "<string>",
+                "location": "<string>",
+                "description": ["<string>", "<string>"]
+            }
+        ],
+        "education": [
+            {
+                "degree": "<string>",
+                "school": "<string>",
+                "level": "<string>",
+                "startDate": "<string>",
+                "endDate": "<string>",
+                "location": "<string>",
+                "cgpa": "<string>"
+            }
+        ],
+        "skills": ["<string>", "<string>"],
+        "languages": ["<string>", "<string>"],
+        "interests": ["<string>", "<string>"],
+        "achievements": [
+            {
+                "title": "<string>",
+                "description": "<string>"
+            }
+        ],
+        "projects": [
+            {
+                "title": "<string>",
+                "startDate": "<string>",
+                "endDate": "<string>",
+                "tech": "<string>",
+                "description": ["<string>", "<string>"]
+            }
+        ],
+        "certifications": [
+            {
+                "name": "<string>",
+                "issuer": "<string>",
+                "date": "<string>"
+            }
+        ]
+    }"""
+    
+    prompt = f"""
+IMPORTANT: You MUST return ONLY valid JSON in the exact format specified below. Do NOT include any additional text, explanations, or analysis outside of the JSON structure.
+
+You are an expert Resume Extractor. Extract all relevant information from the provided text and structure it precisely as per the JSON format.
+
+EXTRACTION RULES:
+1. Extract information accurately from the text only - do not invent or assume any data
+2. For dates: Use format "MMM YYYY" (e.g., "Jan 2023"). Use "Present" for ongoing items
+3. For descriptions: Split into an array of bullet points or key phrases
+4. For achievements: Description is a single string, not array
+5. If a field is not present, use empty string "" for strings, or empty array [] for lists
+6. Education level: Infer from degree (e.g., "Undergraduation" for Bachelor's, "High School" for secondary)
+7. Skills/languages/interests: List as arrays of strings
+8. Experience/Internships/Projects: Use arrays of objects, with descriptions as arrays
+
+Return ONLY the JSON object matching this exact structure:
+{json_structure}
+
+Pasted Profile Text:
+{pasted_text}
+"""
+    
+    try:
+        payload = {
+            "model_name": "mistral:7b-instruct",
+            "prompt": prompt,
+            "actual_data": pasted_text,
+            "temperature": 0.1,
+            "top_p": 0.9,
+            "max_tokens": 5000,
+            "top_k": 40,
+            "repeat_penalty": 1.1,
+            "num_ctx": 5000,
+            "stop": ["\n\n", "Human:", "```"],
+            "conversation_history": []
+        }
+        
+        response = requests.post(
+            OLLAMA_BASE_URL, 
+            json=payload
+        )
+
+        if response.status_code != 200:
+            current_app.logger.error(f"Ollama API error: {response.status_code} - {response.text}")
+            return jsonify({"error": f"Ollama API error: {response.text}"}), 500
+            
+        result = response.json()
+        
+        if not result.get("success", False):
+            return jsonify({"error": f"Ollama API returned unsuccessful response: {result.get('message', 'Unknown error')}"}), 500
+            
+        response_text = result.get("response", "").strip()
+        
+        # Clean and extract JSON
+        # Clean and extract JSON
+        if response_text.startswith('```json'):
+           response_text = response_text[7:]
+        if response_text.startswith('```'):
+           response_text = response_text[3:]
+        if response_text.endswith('```'):
+         response_text = response_text[:-3]
+        response_text = response_text.strip()
+        
+        try:
+            result_dict = json.loads(response_text)
+        except json.JSONDecodeError as e:
+            current_app.logger.error(f"JSON parsing failed. Cleaned response: {response_text[:500]}")
+            current_app.logger.error(f"JSON decode error: {str(e)}")
+            
+            json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
+            if json_match:
+                try:
+                    result_dict = json.loads(json_match.group())
+                except json.JSONDecodeError:
+                    return jsonify({
+                        "error": "AI returned invalid JSON format", 
+                        "raw_response": response_text[:200] + "..."
+                    }), 500
+            else:
+                return jsonify({
+                    "error": "AI returned non-JSON response", 
+                    "raw_response": response_text[:200] + "..."
+                }), 500
+
+        return jsonify(result_dict)
+        
+    except requests.exceptions.Timeout:
+        return jsonify({"error": "Ollama API request timed out"}), 500
+    except requests.exceptions.RequestException as e:
+        current_app.logger.error(f"Ollama API connection error: {str(e)}")
+        return jsonify({"error": f"Connection error: {str(e)}"}), 500
+    except Exception as e:
+        current_app.logger.error(f"Extraction failed: {str(e)}", exc_info=True)
+        return jsonify({"error": f"Extraction failed: {str(e)}"}), 500

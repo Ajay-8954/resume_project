@@ -9,10 +9,6 @@ width: 170mm;
   box-sizing: border-box;
 }
 
-.resume-inner {
-  padding: 10mm;  /* reliable in PDF */
-  box-sizing: border-box;
-}
 /* Header */
 .resume-header {
   text-align: center;
@@ -31,9 +27,9 @@ width: 170mm;
   margin-top: 4px;
 }
 
-.contact-info {
+.template5-contact-info {
   font-size: 13px;
-  margin-top: 8px;
+  
   color: #444;
 }
 
@@ -309,4 +305,93 @@ width: 170mm;
 
 .location {
   color: #555;
+}
+
+/* Print/PDF-specific styles for better page breaks */
+@media print {
+  @page {
+    margin: 5mm; /* Adds uniform 10mm margins around the page edges, including top space */
+    size: A4; /* Explicitly sets A4 size to match your width/height */
+  }
+
+  .resume-container {
+    width: 170mm;
+    min-height: 297mm;
+    background-color: white;
+    color: #333;
+    box-sizing: border-box;
+    margin: 0; /* Ensures no extra container margins override @page */
+  }
+
+  /* Allow sections to break naturally if content overflows */
+  .summary-section,
+  .achievements,
+  .experience-section,
+  .education-section,
+  .skills-section,
+  .language-section,
+  .interest-section,
+  .certification-section {
+    /* Removed page-break-inside: avoid; to allow breaks within sections */
+    orphans: 3; /* Keep at least 3 lines at the bottom of a page */
+    widows: 3;  /* Keep at least 3 lines at the top of a page */
+  }
+
+  /* Allow items to break if needed, but avoid breaking short ones */
+  .experience-item,
+  .education-item,
+  .achievement-box,
+  .language-item,
+  .interest-item,
+  .certification-item {
+    /* Removed page-break-inside: avoid; for flexible flow */
+    orphans: 2;
+    widows: 2;
+  }
+
+  /* Allow lists to break within long bullets */
+  .experience-details {
+    /* Removed page-break-inside: avoid; to permit mid-list breaks */
+    list-style-type: disc;
+    orphans: 2;
+    widows: 2;
+  }
+
+.experience-details li {
+    /* Keep individual bullets from breaking to prevent awkward splits */
+    page-break-inside: avoid;
+    break-inside: avoid;
+    margin-bottom: 2px; /* Small space to allow natural flow */
+    list-style-type: disc; /* ✅ Explicitly set bullets on li for consistency */
+    margin-left: 20px;
+    }
+
+  /* Header should not break */
+  .resume-header {
+    page-break-after: avoid;
+    break-after: avoid;
+  }
+
+  /* Encourage breaks after headings (but allow if needed) */
+  .section-title-centered {
+    page-break-after: auto; /* Allows content to flow after heading */
+    break-after: auto;
+  }
+
+  /* Allow paragraphs to break naturally */
+  .summary-text,
+  .achievement-desc,
+  .skills-inline {
+    /* Removed avoid to let text flow across pages */
+    orphans: 2;
+    widows: 2;
+  }
+
+  /* Flex/grid items - allow break if row is too long */
+  .experience-header,
+  .education-item,
+  .achievements-grid {
+    page-break-inside: auto; /* Explicitly allow breaks */
+    break-inside: auto;
+  }
 }
