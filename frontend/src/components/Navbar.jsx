@@ -69,7 +69,7 @@ const Navbar = () => {
     return (
       <header className="flex justify-between items-center px-4 sm:px-6 py-3 sm:py-4 bg-gradient-to-r from-blue-50 via-indigo-50 to-gray-50 shadow-lg border-b border-blue-100 sticky top-0 z-50">
         <h1 className="text-xl sm:text-2xl font-extrabold text-blue-600 transition-transform duration-300 hover:scale-105">
-          Resumex.io
+          Resumaze
         </h1>
         <div className="w-20 sm:w-24 h-6 bg-blue-200 rounded animate-pulse"></div>
       </header>
@@ -82,7 +82,7 @@ const Navbar = () => {
         className="text-xl sm:text-2xl md:text-3xl font-extrabold text-blue-600 cursor-pointer transition-all duration-300 hover:scale-105 hover:text-blue-700 hover:shadow-md bg-white/80 backdrop-blur-sm px-3 py-1 rounded-lg"
         onClick={() => navigate("/")}
       >
-        Resumex.io
+        Resumaze
       </h1>
 
       <div className="flex items-center space-x-2 sm:space-x-3 md:space-x-4 lg:space-x-6">
